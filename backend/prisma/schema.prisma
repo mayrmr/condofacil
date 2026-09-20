@@ -1,0 +1,328 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+//
+// Estrategia de localizacao polimorfica: OCORRENCIA e AVISO apontam para um
+// BLOCO, APARTAMENTO ou AREA_SOCIAL atraves do par (localizacaoTipo,
+// localizacaoId). Prisma nao suporta relacoes polimorficas nativas, entao
+// localizacaoId fica como um uuid solto (sem FK declarada) e localizacaoTipo
+// (enum LocalizacaoTipo) diz qual tabela ele referencia; a integridade
+// referencial desse par e responsabilidade da camada de aplicacao/validacao.
+//
+// Vinculo com Supabase Auth: authUserId em Usuario/Funcionario/Gestor guarda
+// o id de auth.users (schema gerenciado pelo Supabase, fora do Prisma). O
+// backend resolve role + predio_id(s) a partir desse id apos validar o JWT.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USUARIO
+  FUNCIONARIO
+  GESTOR
+}
+
+enum LocalizacaoTipo {
+  BLOCO
+  APARTAMENTO
+  AREA_SOCIAL
+}
+
+enum StatusOcorrencia {
+  ABERTURA
+  ANALISE
+  ATENDIMENTO
+  AGUARDA_MATERIAL
+  RESOLVIDA
+  CANCELAMENTO
+  AVALIACAO
+  EXCLUIDA
+}
+
+enum Prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum StatusAviso {
+  ATIVO
+  ENCERRADO
+}
+
+enum AutorTipo {
+  USUARIO
+  FUNCIONARIO
+  GESTOR
+}
+
+model Empresa {
+  id      String   @id @default(uuid())
+  nome    String
+  predios Predio[]
+
+  @@map("empresas")
+}
+
+model Predio {
+  id        String   @id @default(uuid())
+  empresaId String   @map("empresa_id")
+  nome      String
+  endereco  String
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  empresa      Empresa             @relation(fields: [empresaId], references: [id])
+  blocos       Bloco[]
+  areasSociais AreaSocial[]
+  usuarios     Usuario[]
+  funcionarios FuncionarioPredio[]
+  gestores     GestorPredio[]
+  ocorrencias  Ocorrencia[]
+  avisos       Aviso[]
+
+  @@map("predios")
+}
+
+model Bloco {
+  id       String @id @default(uuid())
+  predioId String @map("predio_id")
+  nome     String
+
+  predio       Predio        @relation(fields: [predioId], references: [id])
+  apartamentos Apartamento[]
+
+  @@map("blocos")
+}
+
+model Apartamento {
+  id      String @id @default(uuid())
+  blocoId String @map("bloco_id")
+  numero  String
+
+  bloco    Bloco     @relation(fields: [blocoId], references: [id])
+  usuarios Usuario[]
+
+  @@map("apartamentos")
+}
+
+model AreaSocial {
+  id       String @id @default(uuid())
+  predioId String @map("predio_id")
+  nome     String
+
+  predio Predio @relation(fields: [predioId], references: [id])
+
+  @@map("areas_sociais")
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  authUserId    String   @unique @map("auth_user_id")
+  predioId      String   @map("predio_id")
+  apartamentoId String?  @map("apartamento_id")
+  nomeCompleto  String   @map("nome_completo")
+  email         String   @unique
+  telefone      String?
+  fotoUrl       String?  @map("foto_url")
+  criadoEm      DateTime @default(now()) @map("criado_em")
+
+  predio      Predio       @relation(fields: [predioId], references: [id])
+  apartamento Apartamento? @relation(fields: [apartamentoId], references: [id])
+  ocorrencias Ocorrencia[]
+
+  @@index([predioId])
+  @@map("usuarios")
+}
+
+model Funcionario {
+  id           String   @id @default(uuid())
+  authUserId   String   @unique @map("auth_user_id")
+  nomeCompleto String   @map("nome_completo")
+  email        String   @unique
+  telefone     String?
+  fotoUrl      String?  @map("foto_url")
+  area         String
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  predios     FuncionarioPredio[]
+  ocorrencias Ocorrencia[]
+
+  @@map("funcionarios")
+}
+
+model Gestor {
+  id           String   @id @default(uuid())
+  authUserId   String   @unique @map("auth_user_id")
+  nomeCompleto String   @map("nome_completo")
+  email        String   @unique
+  telefone     String?
+  fotoUrl      String?  @map("foto_url")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  predios     GestorPredio[]
+  ocorrencias Ocorrencia[]
+  avisos      Aviso[]
+
+  @@map("gestores")
+}
+
+// Tabelas associativas: funcionario/gestor podem estar vinculados a mais de um predio.
+model FuncionarioPredio {
+  funcionarioId String @map("funcionario_id")
+  predioId      String @map("predio_id")
+
+  funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
+  predio      Predio      @relation(fields: [predioId], references: [id])
+
+  @@id([funcionarioId, predioId])
+  @@map("funcionarios_predios")
+}
+
+model GestorPredio {
+  gestorId String @map("gestor_id")
+  predioId String @map("predio_id")
+
+  gestor Gestor @relation(fields: [gestorId], references: [id])
+  predio Predio @relation(fields: [predioId], references: [id])
+
+  @@id([gestorId, predioId])
+  @@map("gestores_predios")
+}
+
+model Ocorrencia {
+  id                       String  @id @default(uuid())
+  predioId                 String  @map("predio_id")
+  criadoPorUsuarioId       String  @map("criado_por_usuario_id")
+  responsavelFuncionarioId String? @map("responsavel_funcionario_id")
+  gestorAnaliseId          String? @map("gestor_analise_id")
+
+  titulo    String
+  descricao String
+  categoria String
+
+  localizacaoTipo LocalizacaoTipo @map("localizacao_tipo")
+  localizacaoId   String          @map("localizacao_id")
+
+  prioridade  Prioridade?
+  statusAtual StatusOcorrencia @default(ABERTURA) @map("status_atual")
+
+  solucaoAplicada        String? @map("solucao_aplicada")
+  observacoesGestao      String? @map("observacoes_gestao")
+  observacoesFuncionario String? @map("observacoes_funcionario")
+
+  avaliacaoNota       Int?    @map("avaliacao_nota")
+  avaliacaoComentario String? @map("avaliacao_comentario")
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  predio      Predio       @relation(fields: [predioId], references: [id])
+  usuario     Usuario      @relation(fields: [criadoPorUsuarioId], references: [id])
+  funcionario Funcionario? @relation(fields: [responsavelFuncionarioId], references: [id])
+  gestor      Gestor?      @relation(fields: [gestorAnaliseId], references: [id])
+
+  historico   HistoricoStatus[]
+  comentarios Comentario[]
+  imagens     Imagem[]
+
+  @@index([predioId])
+  @@index([statusAtual])
+  @@map("ocorrencias")
+}
+
+model HistoricoStatus {
+  id                   String            @id @default(uuid())
+  ocorrenciaId         String            @map("ocorrencia_id")
+  statusAnterior       StatusOcorrencia? @map("status_anterior")
+  statusNovo           StatusOcorrencia  @map("status_novo")
+  usuarioResponsavelId String            @map("usuario_responsavel_id")
+  autorTipo            AutorTipo         @map("autor_tipo")
+  observacao           String?
+  criadoEm             DateTime          @default(now()) @map("criado_em")
+
+  ocorrencia Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+
+  @@index([ocorrenciaId])
+  @@map("historico_status")
+}
+
+model Comentario {
+  id           String    @id @default(uuid())
+  ocorrenciaId String?   @map("ocorrencia_id")
+  avisoId      String?   @map("aviso_id")
+  autorId      String    @map("autor_id")
+  autorTipo    AutorTipo @map("autor_tipo")
+  texto        String
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+
+  ocorrencia Ocorrencia? @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+  aviso      Aviso?      @relation(fields: [avisoId], references: [id], onDelete: Cascade)
+
+  @@index([ocorrenciaId])
+  @@index([avisoId])
+  @@map("comentarios")
+}
+
+model Imagem {
+  id           String @id @default(uuid())
+  ocorrenciaId String @map("ocorrencia_id")
+  storageUrl   String @map("storage_url")
+
+  ocorrencia Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+
+  @@map("imagens")
+}
+
+model Aviso {
+  id       String @id @default(uuid())
+  predioId String @map("predio_id")
+  gestorId String @map("gestor_id")
+
+  titulo    String
+  descricao String
+  categoria String
+
+  localizacaoTipo LocalizacaoTipo @map("localizacao_tipo")
+  localizacaoId   String          @map("localizacao_id")
+
+  status   StatusAviso @default(ATIVO)
+  criadoEm DateTime    @default(now()) @map("criado_em")
+
+  predio      Predio       @relation(fields: [predioId], references: [id])
+  gestor      Gestor       @relation(fields: [gestorId], references: [id])
+  comentarios Comentario[]
+
+  @@index([predioId])
+  @@map("avisos")
+}
+
+enum StatusConvite {
+  PENDENTE
+  ACEITO
+  EXPIRADO
+}
+
+// Convite de funcionario/gestor por e-mail (secao 2 e 11 da especificacao):
+// token opaco com expiracao, vinculado a um e-mail especifico e ao(s) predio(s)
+// que o convidado vai atender. Ao aceitar, o backend cria o Funcionario/Gestor
+// e os vinculos em FuncionarioPredio/GestorPredio.
+model Convite {
+  id                String        @id @default(uuid())
+  email             String
+  role              Role
+  predioIds         String[]      @map("predio_ids")
+  area              String?
+  tokenHash         String        @unique @map("token_hash")
+  status            StatusConvite @default(PENDENTE)
+  criadoPorGestorId String        @map("criado_por_gestor_id")
+  expiraEm          DateTime      @map("expira_em")
+  criadoEm          DateTime      @default(now()) @map("criado_em")
+
+  @@index([email])
+  @@map("convites")
+}
