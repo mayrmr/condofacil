@@ -77,14 +77,20 @@ model Predio {
   endereco  String
   criadoEm  DateTime @default(now()) @map("criado_em")
 
-  empresa      Empresa             @relation(fields: [empresaId], references: [id])
-  blocos       Bloco[]
-  areasSociais AreaSocial[]
-  usuarios     Usuario[]
-  funcionarios FuncionarioPredio[]
-  gestores     GestorPredio[]
-  ocorrencias  Ocorrencia[]
-  avisos       Aviso[]
+  empresa          Empresa             @relation(fields: [empresaId], references: [id])
+  blocos           Bloco[]
+  areasSociais     AreaSocial[]
+  usuarios         Usuario[]
+  funcionarios     FuncionarioPredio[]
+  gestores         GestorPredio[]
+  ocorrencias      Ocorrencia[]
+  avisos           Aviso[]
+  faturas          Fatura[]
+  areasReservaveis AreaReservavel[]
+  reservas         Reserva[]
+  visitantes       Visitante[]
+  encomendas       Encomenda[]
+  enquetes         Enquete[]
 
   @@map("predios")
 }
@@ -135,6 +141,10 @@ model Usuario {
   predio      Predio       @relation(fields: [predioId], references: [id])
   apartamento Apartamento? @relation(fields: [apartamentoId], references: [id])
   ocorrencias Ocorrencia[]
+  faturas     Fatura[]
+  reservas    Reserva[]
+  visitantes  Visitante[]
+  encomendas  Encomenda[]
 
   @@index([predioId])
   @@map("usuarios")
@@ -168,6 +178,7 @@ model Gestor {
   predios     GestorPredio[]
   ocorrencias Ocorrencia[]
   avisos      Aviso[]
+  enquetes    Enquete[]
 
   @@map("gestores")
 }
@@ -325,4 +336,177 @@ model Convite {
 
   @@index([email])
   @@map("convites")
+}
+
+// ---------------------------------------------------------------------
+// Modulos adicionais trazidos do design de referencia (app de condominio):
+// Financeiro, Reservas, Visitantes, Encomendas e Enquetes. Seguem o mesmo
+// padrao de isolamento por predio_id dos modulos originais.
+// ---------------------------------------------------------------------
+
+enum StatusFatura {
+  EM_ABERTO
+  PAGA
+  ATRASADA
+}
+
+model Fatura {
+  id            String       @id @default(uuid())
+  predioId      String       @map("predio_id")
+  usuarioId     String       @map("usuario_id")
+  competencia   String
+  valorCentavos Int          @map("valor_centavos")
+  vencimento    DateTime
+  status        StatusFatura @default(EM_ABERTO)
+  pagoEm        DateTime?    @map("pago_em")
+  criadoEm      DateTime     @default(now()) @map("criado_em")
+
+  predio  Predio  @relation(fields: [predioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([predioId])
+  @@index([usuarioId])
+  @@map("faturas")
+}
+
+model AreaReservavel {
+  id        String   @id @default(uuid())
+  predioId  String   @map("predio_id")
+  nome      String
+  descricao String?
+  ativa     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  predio   Predio    @relation(fields: [predioId], references: [id])
+  reservas Reserva[]
+
+  @@index([predioId])
+  @@map("areas_reservaveis")
+}
+
+enum StatusReserva {
+  CONFIRMADA
+  CANCELADA
+}
+
+model Reserva {
+  id         String        @id @default(uuid())
+  predioId   String        @map("predio_id")
+  areaId     String        @map("area_id")
+  usuarioId  String        @map("usuario_id")
+  data       DateTime
+  horaInicio String        @map("hora_inicio")
+  horaFim    String        @map("hora_fim")
+  status     StatusReserva @default(CONFIRMADA)
+  criadoEm   DateTime      @default(now()) @map("criado_em")
+
+  predio  Predio         @relation(fields: [predioId], references: [id])
+  area    AreaReservavel @relation(fields: [areaId], references: [id])
+  usuario Usuario        @relation(fields: [usuarioId], references: [id])
+
+  @@index([predioId])
+  @@index([areaId])
+  @@index([usuarioId])
+  @@map("reservas")
+}
+
+enum StatusVisitante {
+  AUTORIZADO
+  EXPIRADO
+}
+
+model Visitante {
+  id         String          @id @default(uuid())
+  predioId   String          @map("predio_id")
+  usuarioId  String          @map("usuario_id")
+  nome       String
+  documento  String?
+  dataVisita DateTime        @map("data_visita")
+  observacao String?
+  status     StatusVisitante @default(AUTORIZADO)
+  criadoEm   DateTime        @default(now()) @map("criado_em")
+
+  predio  Predio  @relation(fields: [predioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([predioId])
+  @@index([usuarioId])
+  @@map("visitantes")
+}
+
+enum StatusEncomenda {
+  AGUARDANDO_RETIRADA
+  RETIRADA
+}
+
+// registradoPorId fica solto (sem @relation) porque quem registra a chegada
+// e sempre funcionario/gestor (portaria), nunca Usuario — mesma logica
+// polimorfica de Comentario.autorId, so que aqui e opcional.
+model Encomenda {
+  id              String          @id @default(uuid())
+  predioId        String          @map("predio_id")
+  usuarioId       String          @map("usuario_id")
+  descricao       String?
+  status          StatusEncomenda @default(AGUARDANDO_RETIRADA)
+  chegadaEm       DateTime        @default(now()) @map("chegada_em")
+  retiradaEm      DateTime?       @map("retirada_em")
+  registradoPorId String?         @map("registrado_por_id")
+
+  predio  Predio  @relation(fields: [predioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([predioId])
+  @@index([usuarioId])
+  @@map("encomendas")
+}
+
+enum StatusEnquete {
+  ATIVA
+  ENCERRADA
+}
+
+model Enquete {
+  id        String        @id @default(uuid())
+  predioId  String        @map("predio_id")
+  gestorId  String        @map("gestor_id")
+  titulo    String
+  descricao String?
+  status    StatusEnquete @default(ATIVA)
+  criadoEm  DateTime      @default(now()) @map("criado_em")
+
+  predio       Predio         @relation(fields: [predioId], references: [id])
+  gestor       Gestor         @relation(fields: [gestorId], references: [id])
+  opcoes       OpcaoEnquete[]
+  votoEnquetes VotoEnquete[]
+
+  @@index([predioId])
+  @@map("enquetes")
+}
+
+model OpcaoEnquete {
+  id        String @id @default(uuid())
+  enqueteId String @map("enquete_id")
+  texto     String
+
+  enquete Enquete       @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
+  votos   VotoEnquete[]
+
+  @@map("opcoes_enquete")
+}
+
+// autorId/autorTipo: polimorfico (usuario, funcionario ou gestor podem
+// votar), mesma estrategia de Comentario.
+model VotoEnquete {
+  id        String    @id @default(uuid())
+  enqueteId String    @map("enquete_id")
+  opcaoId   String    @map("opcao_id")
+  autorId   String    @map("autor_id")
+  autorTipo AutorTipo @map("autor_tipo")
+  criadoEm  DateTime  @default(now()) @map("criado_em")
+
+  enquete Enquete      @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
+  opcao   OpcaoEnquete @relation(fields: [opcaoId], references: [id], onDelete: Cascade)
+
+  @@unique([enqueteId, autorId])
+  @@map("votos_enquete")
 }
