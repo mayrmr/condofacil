@@ -118,7 +118,10 @@ POST   /auth/convite/:token/aceitar     (público — aceita convite, cria a con
 GET    /predios/:id
 POST   /predios                         (gestor — novo prédio de uma empresa que já administra)
 GET    /predios/:id/blocos
+POST   /predios/:id/blocos                          (gestor)
 GET    /predios/:id/areas-sociais
+POST   /predios/:id/areas-sociais                   (gestor)
+POST   /predios/:id/blocos/:blocoId/apartamentos    (gestor)
 
 GET    /ocorrencias?categoria=&data=&localizacaoId=&prioridade=&status=&minhas=
 POST   /ocorrencias                     (usuário)
@@ -153,6 +156,24 @@ Decisões tomadas ao implementar (onde a especificação original era ambígua o
 - Só **Usuário** cria ocorrências (`Ocorrencia.criadoPorUsuarioId` só referencia `Usuario`, conforme o ER diagram da seção anterior); Funcionário/Gestor acompanham e atuam, mas não abrem em nome próprio.
 - Avaliar a resolução é uma ação dedicada (`PATCH .../avaliacao`) e não um `PATCH .../status` genérico, porque ela sempre vem acompanhada de nota + comentário.
 - `POST /auth/cadastro-empresa` cobre o "cadastro inicial da empresa" do gestor (seção 3): cria `Empresa` + primeiro `Predio` + o `Gestor`, tudo antes de existir qualquer sessão autenticada.
+
+## Páginas do frontend (`frontend/app/`)
+
+```
+/login, /registro                    públicas — auto-cadastro de usuário
+/cadastro-empresa                    público — bootstrap de empresa+prédio+gestor
+/aceitar-convite/[token]             público — funcionário/gestor aceita convite
+/                                    feed (ocorrências + avisos do prédio)
+/minhas-ocorrencias                  usuário
+/ocorrencias/nova, /ocorrencias/[id] usuário cria; todos os perfis acompanham/atuam em [id]
+/avisos                              todos veem/comentam; gestor cria/encerra
+/area-usuario                        editar o próprio perfil
+/dashboard                           funcionário (4 modos) e gestor (6 modos)
+/predio/estrutura                    gestor — cadastra blocos, apartamentos e áreas sociais
+/gestor/convidar                     gestor — gera link de convite para funcionário/gestor
+```
+
+`/predio/estrutura` é pré-requisito prático para `/ocorrencias/nova` funcionar: sem blocos/apartamentos/áreas sociais cadastrados, o morador não tem nenhuma opção de localização para escolher.
 
 ## Segurança
 
