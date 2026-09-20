@@ -16,6 +16,12 @@ export type LocalizacaoTipo = 'BLOCO' | 'APARTAMENTO' | 'AREA_SOCIAL';
 
 export type StatusAviso = 'ATIVO' | 'ENCERRADO';
 
+export type StatusFatura = 'EM_ABERTO' | 'PAGA' | 'ATRASADA';
+export type StatusReserva = 'CONFIRMADA' | 'CANCELADA';
+export type StatusVisitante = 'AUTORIZADO' | 'EXPIRADO';
+export type StatusEncomenda = 'AGUARDANDO_RETIRADA' | 'RETIRADA';
+export type StatusEnquete = 'ATIVA' | 'ENCERRADA';
+
 export interface Ocorrencia {
   id: string;
   predioId: string;
@@ -130,3 +136,77 @@ export interface PerfilFuncionarioOuGestor {
 }
 
 export type Perfil = (PerfilUsuario | PerfilFuncionarioOuGestor) & { role?: Role };
+
+export interface Fatura {
+  id: string;
+  predioId: string;
+  usuarioId: string;
+  competencia: string;
+  valorCentavos: number;
+  vencimento: string;
+  status: StatusFatura;
+  pagoEm: string | null;
+  criadoEm: string;
+}
+
+export interface AreaReservavel {
+  id: string;
+  predioId: string;
+  nome: string;
+  descricao: string | null;
+  ativa: boolean;
+}
+
+export interface Reserva {
+  id: string;
+  predioId: string;
+  areaId: string;
+  usuarioId: string;
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+  status: StatusReserva;
+  criadoEm: string;
+  area?: AreaReservavel;
+}
+
+export interface Visitante {
+  id: string;
+  predioId: string;
+  usuarioId: string;
+  nome: string;
+  documento: string | null;
+  dataVisita: string;
+  observacao: string | null;
+  status: StatusVisitante;
+  criadoEm: string;
+}
+
+export interface Encomenda {
+  id: string;
+  predioId: string;
+  usuarioId: string;
+  descricao: string | null;
+  status: StatusEncomenda;
+  chegadaEm: string;
+  retiradaEm: string | null;
+}
+
+export interface OpcaoEnquete {
+  id: string;
+  enqueteId: string;
+  texto: string;
+  _count?: { votos: number };
+}
+
+export interface Enquete {
+  id: string;
+  predioId: string;
+  gestorId: string;
+  titulo: string;
+  descricao: string | null;
+  status: StatusEnquete;
+  criadoEm: string;
+  opcoes: OpcaoEnquete[];
+  minhaOpcaoId: string | null;
+}

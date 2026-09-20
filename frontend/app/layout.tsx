@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { NavBar } from '@/components/NavBar';
+import { Geist, Geist_Mono, Quicksand } from 'next/font/google';
+import { Sidebar } from '@/components/Sidebar';
 import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
@@ -14,6 +14,12 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const quicksand = Quicksand({
+  variable: '--font-heading',
+  subsets: ['latin'],
+  weight: ['600', '700'],
+});
+
 export const metadata: Metadata = {
   title: 'Plataforma de Chamados',
   description: 'Registro, acompanhamento e resolução de ocorrências em condomínios.',
@@ -21,11 +27,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} ${quicksand.variable}`}>
       <body>
         <AuthProvider>
-          <NavBar />
-          <main>{children}</main>
+          <div className="app-shell">
+            <Sidebar />
+            <div className="app-content">
+              <main>{children}</main>
+            </div>
+          </div>
         </AuthProvider>
       </body>
     </html>

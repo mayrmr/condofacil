@@ -98,7 +98,7 @@ function FormularioRegistro() {
 
 export default function RegistroPage() {
   return (
-    <div className="stack" style={{ maxWidth: 400, margin: '40px auto' }}>
+    <div className="stack page-transition" style={{ maxWidth: 400, margin: '40px auto' }}>
       <h1>Criar conta</h1>
       <Suspense fallback={<p className="muted">Carregando...</p>}>
         <FormularioRegistro />

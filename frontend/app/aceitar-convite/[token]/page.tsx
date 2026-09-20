@@ -44,7 +44,7 @@ function FormularioAceitarConvite() {
   }
 
   return (
-    <div className="stack" style={{ maxWidth: 400, margin: '40px auto' }}>
+    <div className="stack page-transition" style={{ maxWidth: 400, margin: '40px auto' }}>
       <h1>Aceitar convite</h1>
       <form className="card" onSubmit={handleSubmit}>
         <div className="field">

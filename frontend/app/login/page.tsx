@@ -36,7 +36,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="stack" style={{ maxWidth: 360, margin: '40px auto' }}>
+    <div className="stack page-transition" style={{ maxWidth: 360, margin: '40px auto' }}>
       <h1>Entrar</h1>
       <form className="card" onSubmit={handleSubmit}>
         <div className="field">

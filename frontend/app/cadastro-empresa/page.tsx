@@ -135,7 +135,7 @@ function FormularioCadastroEmpresa() {
 
 export default function CadastroEmpresaPage() {
   return (
-    <div className="stack" style={{ maxWidth: 440, margin: '40px auto' }}>
+    <div className="stack page-transition" style={{ maxWidth: 440, margin: '40px auto' }}>
       <h1>Cadastrar meu condomínio</h1>
       <p className="muted">
         Use esta tela se você é o síndico/gestor e está trazendo o seu condomínio para a plataforma pela
