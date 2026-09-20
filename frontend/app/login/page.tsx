@@ -61,6 +61,10 @@ export default function LoginPage() {
       <p className="muted">
         Não tem conta? <Link href="/registro">Criar conta</Link>
       </p>
+      <p className="muted">
+        É síndico/gestor e vai cadastrar o condomínio pela primeira vez?{' '}
+        <Link href="/cadastro-empresa">Cadastrar meu condomínio</Link>
+      </p>
     </div>
   );
 }

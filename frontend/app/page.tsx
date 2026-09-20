@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { RequireAuth } from '@/components/RequireAuth';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { formatarData } from '@/lib/formatacao';
 import type { Aviso, Ocorrencia } from '@/lib/types';
 
 type ItemFeed = ({ tipo: 'ocorrencia' } & Ocorrencia) | ({ tipo: 'aviso' } & Aviso);
 
 function FeedConteudo() {
+  const { perfil } = useAuth();
   const [itens, setItens] = useState<ItemFeed[]>([]);
   const [categoria, setCategoria] = useState('');
   const [carregando, setCarregando] = useState(true);
@@ -40,9 +42,11 @@ function FeedConteudo() {
     <>
       <div className="row-between">
         <h1>Feed do condomínio</h1>
-        <Link href="/ocorrencias/nova" className="btn btn-primary">
-          + Nova ocorrência
-        </Link>
+        {perfil?.role === 'USUARIO' && (
+          <Link href="/ocorrencias/nova" className="btn btn-primary">
+            + Nova ocorrência
+          </Link>
+        )}
       </div>
       <div className="field" style={{ maxWidth: 240 }}>
         <label htmlFor="categoria">Filtrar por categoria</label>

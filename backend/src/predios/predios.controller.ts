@@ -3,6 +3,9 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
+import { CriarApartamentoDto } from './dto/criar-apartamento.dto.js';
+import { CriarAreaSocialDto } from './dto/criar-area-social.dto.js';
+import { CriarBlocoDto } from './dto/criar-bloco.dto.js';
 import { CriarPredioDto } from './dto/criar-predio.dto.js';
 import { PrediosService } from './predios.service.js';
 
@@ -29,5 +32,28 @@ export class PrediosController {
   @Post()
   criar(@CurrentUser() user: AuthUser, @Body() dto: CriarPredioDto) {
     return this.prediosService.criar(user.perfilId, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/blocos')
+  criarBloco(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CriarBlocoDto) {
+    return this.prediosService.criarBloco(user, id, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/areas-sociais')
+  criarAreaSocial(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CriarAreaSocialDto) {
+    return this.prediosService.criarAreaSocial(user, id, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/blocos/:blocoId/apartamentos')
+  criarApartamento(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('blocoId') blocoId: string,
+    @Body() dto: CriarApartamentoDto,
+  ) {
+    return this.prediosService.criarApartamento(user, id, blocoId, dto);
   }
 }
