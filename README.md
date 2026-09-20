@@ -36,7 +36,12 @@ plataforma-chamados/
 
 ## Status atual
 
-Backend e frontend implementados, e o projeto Supabase real já está provisionado e conectado (migration aplicada, RLS testada com dados reais, bucket de imagens criado). **Falta só o deploy** (Render/Railway + Vercel), que depende das suas contas nessas plataformas.
+🚀 **Em produção**, ponta a ponta (Vercel → Railway → Supabase), validado com um cadastro real de teste:
+
+- **Frontend**: https://frontend-five-opal-12.vercel.app
+- **Backend**: https://plataforma-chamados-backend-production.up.railway.app
+
+Todo o roteiro de desenvolvimento (seção abaixo) está concluído.
 
 ### O que já funciona
 
@@ -48,9 +53,11 @@ Backend e frontend implementados, e o projeto Supabase real já está provisiona
 - **Testes**: 18 unitários da máquina de estados, 16 e2e do fluxo completo abertura → análise → atendimento → resolução → avaliação (três perfis, via fakes em memória), 1 integração real de RLS — **executado contra o projeto Supabase real**, não só simulado.
 - **Frontend (Next.js)**: login, criar conta, feed principal (ocorrências + avisos), minhas ocorrências, nova ocorrência, detalhe da ocorrência (mudar status, prioridade, responsável, comentar, anexar imagem, avaliar), avisos (criar/comentar/encerrar), área do usuário, dashboard de funcionário (4 modos) e gestor (6 modos).
 
-### O que falta (depende das suas contas)
+### Deploy
 
-1. Deploy: backend no Render/Railway, frontend na Vercel, variáveis de ambiente de produção configuradas com as mesmas credenciais do Supabase.
+- **Backend**: Railway, a partir do `Dockerfile` em `backend/` (build automático via Nixpacks/Docker detection). Variáveis de ambiente configuradas: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NODE_ENV=production`.
+- **Frontend**: Vercel, direto do diretório `frontend/`. Variáveis: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL` (apontando para a URL do backend no Railway).
+- Redeploy do backend: `cd backend && railway up --service <service-id>`. Redeploy do frontend: `cd frontend && npx vercel deploy --prod`.
 
 ## Rodando localmente
 
@@ -102,4 +109,4 @@ TEST_DATABASE_URL="$DATABASE_URL" npm run test:e2e
 5. ✅ Endpoints principais + testes
 6. ✅ Frontend consumindo a API
 7. ✅ Empacotar com Docker (backend)
-8. ⬜ Deploy e documentação final (Supabase/Render/Vercel — precisa das suas contas)
+8. ✅ Deploy e documentação final (backend no Railway, frontend na Vercel)
