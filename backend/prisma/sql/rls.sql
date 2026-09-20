@@ -20,23 +20,26 @@
 -- Resolve o(s) predio_id(s) do usuario autenticado (auth.uid()) em qualquer
 -- um dos tres perfis. SECURITY DEFINER evita recursao de RLS ao consultar
 -- usuarios/funcionarios_predios/gestores_predios de dentro de uma policy.
+-- predio_id e auth_user_id sao `text` no schema (Prisma String, sem
+-- @db.Uuid) enquanto auth.uid() retorna `uuid` nativo — por isso o cast
+-- explicito para text nas comparacoes abaixo.
 create or replace function public.predios_do_usuario_autenticado()
-returns setof uuid
+returns setof text
 language sql
 security definer
 stable
 as $$
-  select predio_id from public.usuarios where auth_user_id = auth.uid()
+  select predio_id from public.usuarios where auth_user_id = auth.uid()::text
   union
   select fp.predio_id
     from public.funcionarios_predios fp
     join public.funcionarios f on f.id = fp.funcionario_id
-   where f.auth_user_id = auth.uid()
+   where f.auth_user_id = auth.uid()::text
   union
   select gp.predio_id
     from public.gestores_predios gp
     join public.gestores g on g.id = gp.gestor_id
-   where g.auth_user_id = auth.uid();
+   where g.auth_user_id = auth.uid()::text;
 $$;
 
 alter table public.ocorrencias enable row level security;
@@ -45,6 +48,27 @@ alter table public.usuarios enable row level security;
 alter table public.comentarios enable row level security;
 alter table public.imagens enable row level security;
 alter table public.historico_status enable row level security;
+
+-- RLS so restringe QUAIS linhas aparecem — sem GRANT na tabela em si, o
+-- Postgres nega o acesso inteiro ("permission denied for table ...") antes
+-- mesmo de avaliar as policies. Tabelas criadas via Prisma Migrate (fora do
+-- editor do Supabase) nao ganham esses grants automaticamente.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.ocorrencias to authenticated;
+grant select, insert, update, delete on public.avisos to authenticated;
+grant select on public.usuarios to authenticated;
+grant select, insert, update, delete on public.comentarios to authenticated;
+grant select, insert on public.imagens to authenticated;
+grant select on public.historico_status to authenticated;
+
+-- drop + create em vez de "create or replace" (policies nao suportam
+-- replace) para o script poder ser reaplicado com seguranca.
+drop policy if exists ocorrencias_isolamento_predio on public.ocorrencias;
+drop policy if exists avisos_isolamento_predio on public.avisos;
+drop policy if exists usuarios_isolamento_predio on public.usuarios;
+drop policy if exists comentarios_isolamento_predio on public.comentarios;
+drop policy if exists imagens_isolamento_predio on public.imagens;
+drop policy if exists historico_status_isolamento_predio on public.historico_status;
 
 -- OCORRENCIAS: visivel/gravavel so por quem pertence ao mesmo predio.
 create policy ocorrencias_isolamento_predio on public.ocorrencias

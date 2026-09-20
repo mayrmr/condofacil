@@ -59,6 +59,8 @@ describe.skipIf(!TEST_DATABASE_URL)('RLS — isolamento entre predios (integraca
   });
 
   afterAll(async () => {
+    await prisma.ocorrencia.deleteMany({ where: { predioId: { in: [predioAId, predioBId] } } });
+    await prisma.usuario.deleteMany({ where: { predioId: { in: [predioAId, predioBId] } } });
     await prisma.predio.deleteMany({ where: { empresaId } });
     await prisma.empresa.delete({ where: { id: empresaId } });
     await prisma.$disconnect();
