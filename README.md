@@ -36,24 +36,21 @@ plataforma-chamados/
 
 ## Status atual
 
-O backend e o frontend estão implementados e testados localmente (com dados/serviços simulados onde é preciso). **Falta só o que exige as suas próprias contas externas**: provisionar o projeto Supabase real e fazer o deploy.
+Backend e frontend implementados, e o projeto Supabase real já está provisionado e conectado (migration aplicada, RLS testada com dados reais, bucket de imagens criado). **Falta só o deploy** (Render/Railway + Vercel), que depende das suas contas nessas plataformas.
 
 ### O que já funciona
 
 - **Backend (NestJS)**: módulos `auth`, `ocorrencias`, `avisos`, `usuarios`, `predios`, `notificacoes`, com DTOs validados (`class-validator`) e guards de autenticação/autorização (`SupabaseAuthGuard` + `RolesGuard`).
 - **Máquina de estados da ocorrência**: tabela de transições por perfil (`backend/src/ocorrencias/state-machine/`), validada antes de qualquer troca de status, com histórico automático.
-- **Auth completo**: auto-cadastro de usuário, login (proxy para Supabase Auth), convite de funcionário/gestor por token com expiração, aceite de convite, e cadastro inicial de empresa+prédio+primeiro gestor.
-- **Upload de imagens**: fluxo de signed URL (solicitar upload → cliente envia direto ao Storage → confirmação), com validação de tipo/tamanho no backend.
-- **RLS**: policies prontas em [`backend/prisma/sql/rls.sql`](backend/prisma/sql/rls.sql) — isolam ocorrências/avisos/usuários/comentários/imagens por `predio_id`, e são o que protege o canal Realtime (o frontend assina mudanças direto no Postgres via Supabase, sem passar pelo backend).
-- **Testes**: 18 testes unitários da máquina de estados, 14 testes e2e do fluxo completo abertura → análise → atendimento → resolução → avaliação (com os três perfis, via fakes em memória), 1 teste de integração real de RLS (roda só com `TEST_DATABASE_URL` configurada).
+- **Auth completo**: auto-cadastro de usuário, login (proxy para Supabase Auth), convite de funcionário/gestor por token com expiração, aceite de convite, e cadastro inicial de empresa+prédio+primeiro gestor. Validado de ponta a ponta contra o Supabase real (cadastro → login → JWT → perfil).
+- **Upload de imagens**: fluxo de signed URL (solicitar upload → cliente envia direto ao Storage → confirmação), com validação de tipo/tamanho no backend. Bucket `ocorrencias` (privado) já criado no Storage.
+- **RLS**: policies aplicadas e testadas em [`backend/prisma/sql/rls.sql`](backend/prisma/sql/rls.sql) — isolam ocorrências/avisos/usuários/comentários/imagens por `predio_id`, e são o que protege o canal Realtime (o frontend assina mudanças direto no Postgres via Supabase, sem passar pelo backend). Inclui os `GRANT`s necessários para o role `authenticated` (tabelas criadas via Prisma Migrate não ganham isso automaticamente, ao contrário das criadas pelo editor do Supabase).
+- **Testes**: 18 unitários da máquina de estados, 16 e2e do fluxo completo abertura → análise → atendimento → resolução → avaliação (três perfis, via fakes em memória), 1 integração real de RLS — **executado contra o projeto Supabase real**, não só simulado.
 - **Frontend (Next.js)**: login, criar conta, feed principal (ocorrências + avisos), minhas ocorrências, nova ocorrência, detalhe da ocorrência (mudar status, prioridade, responsável, comentar, anexar imagem, avaliar), avisos (criar/comentar/encerrar), área do usuário, dashboard de funcionário (4 modos) e gestor (6 modos).
 
 ### O que falta (depende das suas contas)
 
-1. **Criar o projeto Supabase** (Postgres + Auth + Storage) e preencher `backend/.env` / `frontend/.env.local` com as credenciais reais (veja os `.env.example` de cada pasta).
-2. Rodar a primeira migration (`npx prisma migrate dev` dentro de `backend/`) e aplicar `backend/prisma/sql/rls.sql` no SQL editor do Supabase.
-3. Criar o bucket **`ocorrencias`** (privado) no Supabase Storage.
-4. Deploy: backend no Render/Railway, frontend na Vercel, variáveis de ambiente de produção configuradas.
+1. Deploy: backend no Render/Railway, frontend na Vercel, variáveis de ambiente de produção configuradas com as mesmas credenciais do Supabase.
 
 ## Rodando localmente
 
@@ -87,13 +84,19 @@ npm run dev   # http://localhost:3000
 ```bash
 cd backend
 npm test          # unitários (máquina de estados)
-npm run test:e2e  # e2e (fluxo completo) + integração de RLS (pulada sem TEST_DATABASE_URL)
+npm run test:e2e  # e2e (fluxo completo); some junto a integração real de RLS se TEST_DATABASE_URL estiver definida
+```
+
+Para rodar a integração real de RLS contra o Supabase provisionado (recomendado depois de qualquer mudança em `rls.sql`):
+
+```bash
+TEST_DATABASE_URL="$DATABASE_URL" npm run test:e2e
 ```
 
 ## Roteiro de desenvolvimento
 
 1. ✅ Modelar o banco de dados (schema Prisma) e estrutura de pastas
-2. 🚧 Configurar autenticação e perfis (Supabase Auth + RLS) — código pronto, falta provisionar o projeto Supabase real
+2. ✅ Configurar autenticação e perfis (Supabase Auth + RLS) — projeto Supabase real provisionado, migration e RLS aplicadas
 3. ✅ Estruturar módulos do NestJS com DTOs tipados
 4. ✅ Implementar a máquina de estados da ocorrência
 5. ✅ Endpoints principais + testes
