@@ -38,9 +38,6 @@ export default function LoginPage() {
   return (
     <div className="login-page page-transition">
       <div className="login-brand-panel">
-        <div className="login-brand-decor d1" />
-        <div className="login-brand-decor d2" />
-
         <div className="login-brand-header">CondoFácil</div>
 
         <div className="login-brand-copy">
@@ -50,6 +47,10 @@ export default function LoginPage() {
             a portaria.
           </p>
         </div>
+
+        <Link href="/cadastro-empresa" className="login-brand-cta">
+          Ainda não é nosso cliente? <strong>Conheça a CondoFácil</strong>
+        </Link>
 
         {/* eslint-disable-next-line @next/next/no-img-element -- imagem estatica decorativa, sem beneficio do next/image aqui */}
         <img src="/images/login-predio.jpg" alt="" className="login-brand-image" />
