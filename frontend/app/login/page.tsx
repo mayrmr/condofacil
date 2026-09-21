@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { IconBuilding } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { supabase } from '@/lib/supabase-client';
 
@@ -42,22 +41,18 @@ export default function LoginPage() {
         <div className="login-brand-decor d1" />
         <div className="login-brand-decor d2" />
 
-        <div className="login-brand-header">
-          <span className="login-brand-icon">
-            <IconBuilding style={{ width: 20, height: 20 }} />
-          </span>
-          Plataforma de Chamados
-        </div>
+        <div className="login-brand-header">CondoFácil</div>
 
         <div className="login-brand-copy">
-          <p className="login-brand-headline">Tudo do seu condomínio, em um só lugar.</p>
+          <p className="login-brand-headline">Seu condomínio, na palma da sua mão.</p>
           <p>
             Financeiro, reservas, avisos e ocorrências — acompanhe e resolva tudo sem precisar ir até
             a portaria.
           </p>
         </div>
 
-        <div className="login-brand-footer">Acesse pelo computador ou pelo celular, direto do navegador.</div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- imagem estatica decorativa, sem beneficio do next/image aqui */}
+        <img src="/images/login-predio.jpg" alt="" className="login-brand-image" />
       </div>
 
       <div className="login-form-panel">
@@ -96,10 +91,6 @@ export default function LoginPage() {
 
           <p className="login-footer-links">
             Não tem conta? <Link href="/registro">Criar conta</Link>
-          </p>
-          <p className="login-footer-links">
-            É síndico/gestor e vai cadastrar o condomínio pela primeira vez?{' '}
-            <Link href="/cadastro-empresa">Cadastrar meu condomínio</Link>
           </p>
         </div>
       </div>

@@ -92,7 +92,7 @@ export function Sidebar() {
           <span className="brand-icon">
             <IconBuilding style={{ width: 18, height: 18 }} />
           </span>
-          Plataforma de Chamados
+          CondoFácil
         </div>
         <nav>
           {itens.map((item) => {
@@ -118,7 +118,7 @@ export function Sidebar() {
       </aside>
 
       <div className="topbar-mobile">
-        <span className="brand">Plataforma de Chamados</span>
+        <span className="brand">CondoFácil</span>
       </div>
 
       <nav className="bottom-nav">

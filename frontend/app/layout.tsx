@@ -21,7 +21,7 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: 'Plataforma de Chamados',
+  title: 'CondoFácil',
   description: 'Registro, acompanhamento e resolução de ocorrências em condomínios.',
 };
 

@@ -735,12 +735,12 @@ main:has(> .login-page) {
 
 @media (min-width: 861px) {
   .login-brand-panel {
+    --login-image-h: clamp(200px, 34vh, 340px);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     width: 480px;
     flex-shrink: 0;
-    padding: 56px;
+    padding: 56px 56px 0;
     position: relative;
     overflow: hidden;
     background: linear-gradient(165deg, #234139, #14201e);
@@ -768,28 +768,17 @@ main:has(> .login-page) {
   }
 
   .login-brand-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    font-family: var(--font-heading), sans-serif;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     position: relative;
-  }
-
-  .login-brand-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
   }
 
   .login-brand-copy {
     position: relative;
     max-width: 380px;
+    margin-top: auto;
+    padding-bottom: var(--login-image-h);
   }
 
   .login-brand-headline {
@@ -807,10 +796,17 @@ main:has(> .login-page) {
     line-height: 1.6;
   }
 
-  .login-brand-footer {
-    position: relative;
-    font-size: 0.82rem;
-    color: #93a6a0;
+  .login-brand-image {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: var(--login-image-h);
+    object-fit: cover;
+    object-position: right bottom;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 90px);
+    mask-image: linear-gradient(to bottom, transparent, black 90px);
   }
 
   .login-form-panel {
