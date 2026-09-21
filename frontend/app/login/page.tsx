@@ -40,17 +40,19 @@ export default function LoginPage() {
       <div className="login-brand-panel">
         <div className="login-brand-header">CondoFácil</div>
 
-        <div className="login-brand-copy">
-          <p className="login-brand-headline">Seu condomínio, na palma da sua mão.</p>
-          <p>
-            Financeiro, reservas, avisos e ocorrências — acompanhe e resolva tudo sem precisar ir até
-            a portaria.
-          </p>
-        </div>
+        <div className="login-brand-middle">
+          <div className="login-brand-copy">
+            <p className="login-brand-headline">Seu condomínio, na palma da sua mão.</p>
+            <p>
+              Financeiro, reservas, avisos e ocorrências — acompanhe e resolva tudo sem precisar ir
+              até a portaria.
+            </p>
+          </div>
 
-        <Link href="/cadastro-empresa" className="login-brand-cta">
-          Ainda não é nosso cliente? <strong>Conheça a CondoFácil</strong>
-        </Link>
+          <Link href="/cadastro-empresa" className="login-brand-cta">
+            Ainda não é nosso cliente? <strong>Conheça a CondoFácil</strong>
+          </Link>
+        </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element -- imagem estatica decorativa, sem beneficio do next/image aqui */}
         <img src="/images/login-predio.jpg" alt="" className="login-brand-image" />

@@ -754,10 +754,18 @@ main:has(> .login-page) {
     position: relative;
   }
 
+  .login-brand-middle {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 28px;
+  }
+
   .login-brand-copy {
     position: relative;
     max-width: 380px;
-    margin-top: 44px;
   }
 
   .login-brand-headline {
@@ -780,8 +788,6 @@ main:has(> .login-page) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    align-self: flex-start;
-    margin-top: auto;
     padding: 10px 16px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.18);
