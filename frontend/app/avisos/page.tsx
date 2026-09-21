@@ -2,10 +2,26 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { RequireAuth } from '@/components/RequireAuth';
+import { IconAlertCircle, IconBell } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { formatarData } from '@/lib/formatacao';
 import type { AreaSocial, Aviso, Bloco, LocalizacaoTipo, PerfilFuncionarioOuGestor } from '@/lib/types';
+
+const CATEGORIAS_URGENTES = ['assembleia', 'urgente', 'seguranca'];
+
+function ehUrgente(categoria: string): boolean {
+  return CATEGORIAS_URGENTES.some((c) => categoria.toLowerCase().includes(c));
+}
+
+function grupoDoAviso(criadoEm: string): 'HOJE' | 'ESTA SEMANA' | 'ANTERIORES' {
+  const data = new Date(criadoEm);
+  const agora = new Date();
+  const diffDias = (agora.getTime() - data.getTime()) / (1000 * 60 * 60 * 24);
+  if (data.toDateString() === agora.toDateString()) return 'HOJE';
+  if (diffDias <= 7) return 'ESTA SEMANA';
+  return 'ANTERIORES';
+}
 
 function NovoAvisoForm({ predioId, aoCriar }: { predioId: string; aoCriar: () => void }) {
   const [blocos, setBlocos] = useState<Bloco[]>([]);
@@ -98,9 +114,20 @@ function NovoAvisoForm({ predioId, aoCriar }: { predioId: string; aoCriar: () =>
   );
 }
 
-function CardAviso({ aviso, aoAtualizar }: { aviso: Aviso; aoAtualizar: () => void }) {
+function LinhaAviso({
+  aviso,
+  aberto,
+  aoAlternar,
+  aoAtualizar,
+}: {
+  aviso: Aviso;
+  aberto: boolean;
+  aoAlternar: () => void;
+  aoAtualizar: () => void;
+}) {
   const { perfil } = useAuth();
   const [texto, setTexto] = useState('');
+  const urgente = ehUrgente(aviso.categoria);
 
   async function comentar(e: FormEvent) {
     e.preventDefault();
@@ -117,36 +144,67 @@ function CardAviso({ aviso, aoAtualizar }: { aviso: Aviso; aoAtualizar: () => vo
 
   return (
     <div id={aviso.id} className="card">
-      <div className="row-between">
-        <strong>📢 {aviso.titulo}</strong>
-        {aviso.status === 'ENCERRADO' && <span className="badge">Encerrado</span>}
-      </div>
-      <p style={{ marginTop: 6 }}>{aviso.descricao}</p>
-      <p className="muted" style={{ marginTop: 6 }}>
-        {aviso.categoria} · {formatarData(aviso.criadoEm)}
-      </p>
-
-      <div className="stack" style={{ marginTop: 12 }}>
-        {aviso.comentarios?.map((c) => (
-          <div key={c.id}>
-            <span className="muted">
-              {c.autorTipo} · {formatarData(c.criadoEm)}
-            </span>
-            <p>{c.texto}</p>
+      <button
+        onClick={aoAlternar}
+        className="row"
+        style={{
+          width: '100%',
+          alignItems: 'flex-start',
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          textAlign: 'left',
+        }}
+      >
+        <span className="chip" style={urgente ? { background: 'var(--accent-soft)', color: 'var(--warning)' } : undefined}>
+          {urgente ? <IconAlertCircle style={{ width: 18, height: 18 }} /> : <IconBell style={{ width: 18, height: 18 }} />}
+        </span>
+        <div style={{ flex: 1 }}>
+          <div className="row-between">
+            <strong style={{ fontSize: '0.92rem' }}>{aviso.titulo}</strong>
+            <span className="muted">{formatarData(aviso.criadoEm)}</span>
           </div>
-        ))}
-      </div>
-      <form onSubmit={comentar} className="field" style={{ marginTop: 8 }}>
-        <textarea placeholder="Comentar..." value={texto} onChange={(e) => setTexto(e.target.value)} />
-        <button type="submit" style={{ marginTop: 8 }}>
-          Comentar
-        </button>
-      </form>
+          {!aberto && (
+            <p className="muted" style={{ marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {aviso.descricao}
+            </p>
+          )}
+          {aviso.status === 'ENCERRADO' && (
+            <span className="badge" style={{ marginTop: 4 }}>
+              Encerrado
+            </span>
+          )}
+        </div>
+      </button>
 
-      {perfil?.role === 'GESTOR' && aviso.status === 'ATIVO' && (
-        <button onClick={encerrar} style={{ marginTop: 8 }}>
-          Encerrar aviso
-        </button>
+      {aberto && (
+        <div style={{ marginTop: 12, paddingLeft: 52 }}>
+          <p>{aviso.descricao}</p>
+
+          <div className="chat" style={{ marginTop: 12 }}>
+            {aviso.comentarios?.map((c) => (
+              <div key={c.id} className={`chat-bubble ${c.autorId === perfil?.id ? 'mine' : ''}`}>
+                <p>{c.texto}</p>
+                <span className="muted">
+                  {c.autorTipo} · {formatarData(c.criadoEm)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={comentar} className="field" style={{ marginTop: 12 }}>
+            <textarea placeholder="Comentar..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+            <button type="submit" className="btn-primary" style={{ marginTop: 8 }}>
+              Comentar
+            </button>
+          </form>
+
+          {perfil?.role === 'GESTOR' && aviso.status === 'ATIVO' && (
+            <button className="btn-danger" onClick={encerrar} style={{ marginTop: 8 }}>
+              Encerrar aviso
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -156,6 +214,7 @@ function ListaAvisos() {
   const { perfil } = useAuth();
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [abertoId, setAbertoId] = useState<string | null>(null);
 
   async function carregar() {
     const dados = await api.get<Aviso[]>('/avisos');
@@ -171,15 +230,35 @@ function ListaAvisos() {
   const predioIdGestor =
     perfil?.role === 'GESTOR' ? (perfil as PerfilFuncionarioOuGestor).predios?.[0]?.predio.id : undefined;
 
+  const grupos: Record<string, Aviso[]> = { HOJE: [], 'ESTA SEMANA': [], ANTERIORES: [] };
+  for (const aviso of avisos) {
+    grupos[grupoDoAviso(aviso.criadoEm)].push(aviso);
+  }
+
   return (
     <div className="stack">
       <h1>Avisos</h1>
       {predioIdGestor && <NovoAvisoForm predioId={predioIdGestor} aoCriar={carregar} />}
       {carregando && <p className="muted">Carregando...</p>}
       {!carregando && avisos.length === 0 && <p className="muted">Nenhum aviso publicado ainda.</p>}
-      {avisos.map((a) => (
-        <CardAviso key={a.id} aviso={a} aoAtualizar={carregar} />
-      ))}
+      {(['HOJE', 'ESTA SEMANA', 'ANTERIORES'] as const)
+        .filter((g) => grupos[g].length > 0)
+        .map((g) => (
+          <div key={g} className="stack">
+            <p className="muted" style={{ textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.03em' }}>
+              {g}
+            </p>
+            {grupos[g].map((a) => (
+              <LinhaAviso
+                key={a.id}
+                aviso={a}
+                aberto={abertoId === a.id}
+                aoAlternar={() => setAbertoId((atual) => (atual === a.id ? null : a.id))}
+                aoAtualizar={carregar}
+              />
+            ))}
+          </div>
+        ))}
     </div>
   );
 }

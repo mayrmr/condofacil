@@ -157,5 +157,16 @@ export const IconBarChart = (props: SVGProps<SVGSVGElement>) =>
     props,
   );
 
+export const IconCheck = (props: SVGProps<SVGSVGElement>) => base(<path d="M5 13l4 4L19 7" />, props);
+
+export const IconAlertCircle = (props: SVGProps<SVGSVGElement>) =>
+  base(
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5M12 16h.01" />
+    </>,
+    props,
+  );
+
 export const IconFilter = (props: SVGProps<SVGSVGElement>) =>
   base(<path d="M4 5h16l-6 7.5V19l-4 2v-8.5L4 5Z" />, props);

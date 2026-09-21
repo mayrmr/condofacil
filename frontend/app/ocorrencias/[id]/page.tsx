@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { RequireAuth } from '@/components/RequireAuth';
+import { IconCheck } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { formatarData, LABEL_STATUS } from '@/lib/formatacao';
@@ -267,31 +268,41 @@ function DetalheOcorrencia() {
 
       <div className="card">
         <h2>Histórico</h2>
-        <div className="stack" style={{ marginTop: 8 }}>
-          {historico.map((h) => (
-            <div key={h.id} className="row-between">
-              <span>
-                {h.statusAnterior ? `${LABEL_STATUS[h.statusAnterior]} → ` : ''}
-                {LABEL_STATUS[h.statusNovo]}
-                {h.observacao ? ` — ${h.observacao}` : ''}
-              </span>
-              <span className="muted">{formatarData(h.criadoEm)}</span>
-            </div>
-          ))}
+        <div style={{ marginTop: 14 }}>
+          {historico.map((h, i) => {
+            const isUltimo = i === historico.length - 1;
+            return (
+              <div key={h.id} className="timeline-item">
+                <div className={`timeline-dot ${isUltimo ? 'atual' : 'completo'}`}>
+                  {!isUltimo && <IconCheck />}
+                </div>
+                <div className="timeline-content">
+                  <strong>{LABEL_STATUS[h.statusNovo]}</strong>
+                  <span className="muted">
+                    {formatarData(h.criadoEm)}
+                    {h.observacao ? ` · ${h.observacao}` : ''}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <div className="card">
-        <h2>Comentários</h2>
-        <div className="stack" style={{ marginTop: 8 }}>
+        <h2>Conversa</h2>
+        <div className="chat" style={{ marginTop: 12 }}>
           {ocorrencia.comentarios?.map((c: Comentario) => (
-            <div key={c.id}>
+            <div key={c.id} className={`chat-bubble ${c.autorId === perfil.id ? 'mine' : ''}`}>
+              <p>{c.texto}</p>
               <span className="muted">
                 {c.autorTipo} · {formatarData(c.criadoEm)}
               </span>
-              <p>{c.texto}</p>
             </div>
           ))}
+          {(!ocorrencia.comentarios || ocorrencia.comentarios.length === 0) && (
+            <p className="muted">Nenhum comentário ainda.</p>
+          )}
         </div>
         <form onSubmit={handleComentar} className="field" style={{ marginTop: 12 }}>
           <textarea
@@ -299,7 +310,7 @@ function DetalheOcorrencia() {
             value={novoComentario}
             onChange={(e) => setNovoComentario(e.target.value)}
           />
-          <button type="submit" style={{ marginTop: 8 }}>
+          <button type="submit" className="btn-primary" style={{ marginTop: 8 }}>
             Comentar
           </button>
         </form>

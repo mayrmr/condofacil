@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import type { SVGProps } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import type { Role } from '@/lib/types';
 import {
@@ -23,7 +24,7 @@ import {
 interface NavItem {
   href: string;
   label: string;
-  icon: (props: { className?: string }) => React.ReactElement;
+  icon: (props: SVGProps<SVGSVGElement>) => React.ReactElement;
   roles?: Role[];
 }
 
@@ -42,9 +43,22 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/area-usuario', label: 'Área do usuário', icon: IconUser },
 ];
 
-function iniciais(nome: string): string {
+// A barra inferior do celular so cabe ~5 itens (padrao de app mobile, igual
+// ao mockup de referencia). O resto das secoes fica acessivel a partir da
+// pagina "Área do usuário" (ver app/area-usuario/page.tsx).
+export const ITENS_BOTTOM_NAV: Record<Role, string[]> = {
+  USUARIO: ['/', '/avisos', '/financeiro', '/reservas', '/area-usuario'],
+  FUNCIONARIO: ['/', '/avisos', '/dashboard', '/encomendas', '/area-usuario'],
+  GESTOR: ['/', '/avisos', '/dashboard', '/financeiro', '/area-usuario'],
+};
+
+export function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/);
   return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+}
+
+export function itensParaPerfil(role?: Role): NavItem[] {
+  return NAV_ITEMS.filter((item) => !item.roles || (role && item.roles.includes(role)));
 }
 
 export function Sidebar() {
@@ -61,22 +75,15 @@ export function Sidebar() {
     return null;
   }
 
-  const itens = NAV_ITEMS.filter((item) => !item.roles || (perfil.role && item.roles.includes(perfil.role)));
+  const itens = itensParaPerfil(perfil.role);
+  const hrefsBottomNav = perfil.role ? ITENS_BOTTOM_NAV[perfil.role] : [];
+  const itensBottomNav = hrefsBottomNav
+    .map((href) => itens.find((item) => item.href === href))
+    .filter((item): item is NavItem => Boolean(item));
 
-  const nav = (
-    <>
-      {itens.map((item) => {
-        const Icon = item.icon;
-        const ativo = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-        return (
-          <Link key={item.href} href={item.href} className={ativo ? 'active' : ''}>
-            <Icon />
-            {item.label}
-          </Link>
-        );
-      })}
-    </>
-  );
+  function estaAtivo(href: string) {
+    return href === '/' ? pathname === '/' : pathname.startsWith(href);
+  }
 
   return (
     <>
@@ -87,7 +94,17 @@ export function Sidebar() {
           </span>
           Plataforma de Chamados
         </div>
-        <nav>{nav}</nav>
+        <nav>
+          {itens.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} className={estaAtivo(item.href) ? 'active' : ''}>
+                <Icon />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
         <div className="sidebar-footer">
           <span className="avatar">{iniciais(perfil.nomeCompleto)}</span>
           <div className="who">
@@ -100,20 +117,21 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <div className="topbar">
-        <span className="brand">Chamados</span>
-        <nav>
-          {itens.map((item) => {
-            const ativo = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-            return (
-              <Link key={item.href} href={item.href} className={ativo ? 'active' : ''}>
-                {item.label}
-              </Link>
-            );
-          })}
-          <button onClick={handleSair}>Sair</button>
-        </nav>
+      <div className="topbar-mobile">
+        <span className="brand">Plataforma de Chamados</span>
       </div>
+
+      <nav className="bottom-nav">
+        {itensBottomNav.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} className={estaAtivo(item.href) ? 'active' : ''}>
+              <Icon />
+              <span>{item.href === '/area-usuario' ? 'Perfil' : item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }
