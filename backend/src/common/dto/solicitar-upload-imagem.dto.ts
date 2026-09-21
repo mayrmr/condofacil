@@ -2,6 +2,11 @@ import { IsIn, IsInt, Max, Min } from 'class-validator';
 
 export const TIPOS_IMAGEM_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const TAMANHO_MAXIMO_IMAGEM_BYTES = 5 * 1024 * 1024; // 5MB
+export const EXTENSAO_POR_CONTENT_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
 export class SolicitarUploadImagemDto {
   @IsIn(TIPOS_IMAGEM_PERMITIDOS)

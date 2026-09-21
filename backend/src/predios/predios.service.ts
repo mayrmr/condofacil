@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { gerarCodigoConvite } from '../common/utils/codigo-convite.util.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CriarApartamentoDto } from './dto/criar-apartamento.dto.js';
@@ -15,6 +16,19 @@ export class PrediosService {
     const predio = await this.prisma.predio.findUnique({ where: { id } });
     if (!predio) {
       throw new NotFoundException('Predio nao encontrado.');
+    }
+    return predio;
+  }
+
+  // Publico: resolve o predio a partir do codigo curto do link de convite de
+  // moradores (/r/:codigo no frontend), sem expor dados sensiveis.
+  async buscarPorCodigoConvite(codigo: string) {
+    const predio = await this.prisma.predio.findUnique({
+      where: { codigoConvite: codigo.toUpperCase() },
+      select: { id: true, nome: true },
+    });
+    if (!predio) {
+      throw new NotFoundException('Link de convite invalido.');
     }
     return predio;
   }
@@ -48,6 +62,7 @@ export class PrediosService {
         empresaId: dto.empresaId,
         nome: dto.nome,
         endereco: dto.endereco,
+        codigoConvite: gerarCodigoConvite(),
         gestores: { create: { gestorId } },
       },
     });
@@ -60,7 +75,9 @@ export class PrediosService {
 
   async criarAreaSocial(user: AuthUser, predioId: string, dto: CriarAreaSocialDto) {
     this.verificarAcesso(user, predioId);
-    return this.prisma.areaSocial.create({ data: { predioId, nome: dto.nome } });
+    return this.prisma.areaSocial.create({
+      data: { predioId, nome: dto.nome, descricao: dto.descricao },
+    });
   }
 
   async criarApartamento(user: AuthUser, predioId: string, blocoId: string, dto: CriarApartamentoDto) {

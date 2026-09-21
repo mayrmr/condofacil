@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { ConfirmarImagemDto } from '../common/dto/confirmar-imagem.dto.js';
 import { CriarComentarioDto } from '../common/dto/criar-comentario.dto.js';
+import { SolicitarUploadImagemDto } from '../common/dto/solicitar-upload-imagem.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
@@ -48,5 +50,21 @@ export class AvisosController {
     @Body() dto: CriarComentarioDto,
   ) {
     return this.avisosService.adicionarComentario(user, id, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/imagens/solicitar-upload')
+  solicitarUploadImagem(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SolicitarUploadImagemDto,
+  ) {
+    return this.avisosService.solicitarUploadImagem(user, id, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/imagens')
+  confirmarImagem(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ConfirmarImagemDto) {
+    return this.avisosService.confirmarImagem(user, id, dto);
   }
 }

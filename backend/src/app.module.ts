@@ -5,7 +5,6 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AvisosModule } from './avisos/avisos.module.js';
 import { EncomendasModule } from './encomendas/encomendas.module.js';
-import { EnquetesModule } from './enquetes/enquetes.module.js';
 import { FinanceiroModule } from './financeiro/financeiro.module.js';
 import { NotificacoesModule } from './notificacoes/notificacoes.module.js';
 import { OcorrenciasModule } from './ocorrencias/ocorrencias.module.js';
@@ -33,7 +32,6 @@ import { VisitantesModule } from './visitantes/visitantes.module.js';
     ReservasModule,
     VisitantesModule,
     EncomendasModule,
-    EnquetesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

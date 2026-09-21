@@ -6,6 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { gerarCodigoConvite } from '../common/utils/codigo-convite.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { Role } from '../generated/prisma/enums.js';
@@ -70,7 +71,12 @@ export class AuthService {
       const { empresa, predio, gestor } = await this.prisma.$transaction(async (tx) => {
         const empresa = await tx.empresa.create({ data: { nome: dto.empresaNome } });
         const predio = await tx.predio.create({
-          data: { empresaId: empresa.id, nome: dto.predioNome, endereco: dto.predioEndereco },
+          data: {
+            empresaId: empresa.id,
+            nome: dto.predioNome,
+            endereco: dto.predioEndereco,
+            codigoConvite: gerarCodigoConvite(),
+          },
         });
         const gestor = await tx.gestor.create({
           data: {

@@ -1,5 +1,5 @@
-import { IsEnum, IsNotEmpty, IsString, IsUUID } from 'class-validator';
-import { LocalizacaoTipo } from '../../generated/prisma/enums.js';
+import { IsEnum, IsNotEmpty, IsString, IsUUID, ValidateIf } from 'class-validator';
+import { DestinatarioAviso, LocalizacaoTipoAviso } from '../../generated/prisma/enums.js';
 
 export class CriarAvisoDto {
   @IsString()
@@ -14,9 +14,19 @@ export class CriarAvisoDto {
   @IsNotEmpty()
   categoria!: string;
 
-  @IsEnum(LocalizacaoTipo)
-  localizacaoTipo!: LocalizacaoTipo;
+  @IsEnum(LocalizacaoTipoAviso)
+  localizacaoTipo!: LocalizacaoTipoAviso;
 
+  // Obrigatorio para AREA_SOCIAL/BLOCO; ausente quando localizacaoTipo e GERAL.
+  @ValidateIf((dto: CriarAvisoDto) => dto.localizacaoTipo !== LocalizacaoTipoAviso.GERAL)
   @IsUUID()
-  localizacaoId!: string;
+  localizacaoId?: string;
+
+  @IsEnum(DestinatarioAviso)
+  destinatarioTipo!: DestinatarioAviso;
+
+  // Obrigatorio quando destinatarioTipo e BLOCO.
+  @ValidateIf((dto: CriarAvisoDto) => dto.destinatarioTipo === DestinatarioAviso.BLOCO)
+  @IsUUID()
+  destinatarioBlocoId?: string;
 }

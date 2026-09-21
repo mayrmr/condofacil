@@ -33,6 +33,20 @@ enum LocalizacaoTipo {
   AREA_SOCIAL
 }
 
+// Avisos tem um conjunto de tipos de local mais enxuto que Ocorrencia (sem
+// APARTAMENTO, com GERAL para comunicados sem local especifico).
+enum LocalizacaoTipoAviso {
+  AREA_SOCIAL
+  BLOCO
+  GERAL
+}
+
+// Quem recebe o aviso: todo o predio ou so os moradores de um bloco.
+enum DestinatarioAviso {
+  TODOS
+  BLOCO
+}
+
 enum StatusOcorrencia {
   ABERTURA
   ANALISE
@@ -71,26 +85,27 @@ model Empresa {
 }
 
 model Predio {
-  id        String   @id @default(uuid())
-  empresaId String   @map("empresa_id")
-  nome      String
-  endereco  String
-  criadoEm  DateTime @default(now()) @map("criado_em")
+  id            String   @id @default(uuid())
+  empresaId     String   @map("empresa_id")
+  nome          String
+  endereco      String
+  // Codigo curto e unico usado no link publico de autocadastro de moradores
+  // (ver AuthService.gerarCodigoConvite) — evita expor o uuid do predio.
+  codigoConvite String   @unique @map("codigo_convite")
+  criadoEm      DateTime @default(now()) @map("criado_em")
 
-  empresa          Empresa             @relation(fields: [empresaId], references: [id])
-  blocos           Bloco[]
-  areasSociais     AreaSocial[]
-  usuarios         Usuario[]
-  funcionarios     FuncionarioPredio[]
-  gestores         GestorPredio[]
-  ocorrencias      Ocorrencia[]
-  avisos           Aviso[]
-  faturas          Fatura[]
-  areasReservaveis AreaReservavel[]
-  reservas         Reserva[]
-  visitantes       Visitante[]
-  encomendas       Encomenda[]
-  enquetes         Enquete[]
+  empresa      Empresa             @relation(fields: [empresaId], references: [id])
+  blocos       Bloco[]
+  areasSociais AreaSocial[]
+  usuarios     Usuario[]
+  funcionarios FuncionarioPredio[]
+  gestores     GestorPredio[]
+  ocorrencias  Ocorrencia[]
+  avisos       Aviso[]
+  faturas      Fatura[]
+  reservas     Reserva[]
+  visitantes   Visitante[]
+  encomendas   Encomenda[]
 
   @@map("predios")
 }
@@ -117,12 +132,18 @@ model Apartamento {
   @@map("apartamentos")
 }
 
+// Tambem serve como area reservavel (ver Reserva.area) — uma unica lista de
+// areas sociais, cadastrada via /predios/:id/areas-sociais, usada tanto para
+// localizacao de ocorrencias/avisos quanto para reservas.
 model AreaSocial {
-  id       String @id @default(uuid())
-  predioId String @map("predio_id")
-  nome     String
+  id        String  @id @default(uuid())
+  predioId  String  @map("predio_id")
+  nome      String
+  descricao String?
+  ativa     Boolean @default(true)
 
-  predio Predio @relation(fields: [predioId], references: [id])
+  predio   Predio    @relation(fields: [predioId], references: [id])
+  reservas Reserva[]
 
   @@map("areas_sociais")
 }
@@ -178,7 +199,6 @@ model Gestor {
   predios     GestorPredio[]
   ocorrencias Ocorrencia[]
   avisos      Aviso[]
-  enquetes    Enquete[]
 
   @@map("gestores")
 }
@@ -279,13 +299,19 @@ model Comentario {
   @@map("comentarios")
 }
 
+// ocorrenciaId/avisoId: polimorfico (mesma estrategia de Comentario) — uma
+// imagem pertence a uma ocorrencia OU a um aviso, nunca aos dois.
 model Imagem {
-  id           String @id @default(uuid())
-  ocorrenciaId String @map("ocorrencia_id")
-  storageUrl   String @map("storage_url")
+  id           String  @id @default(uuid())
+  ocorrenciaId String? @map("ocorrencia_id")
+  avisoId      String? @map("aviso_id")
+  storageUrl   String  @map("storage_url")
 
-  ocorrencia Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+  ocorrencia Ocorrencia? @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+  aviso      Aviso?      @relation(fields: [avisoId], references: [id], onDelete: Cascade)
 
+  @@index([ocorrenciaId])
+  @@index([avisoId])
   @@map("imagens")
 }
 
@@ -298,8 +324,13 @@ model Aviso {
   descricao String
   categoria String
 
-  localizacaoTipo LocalizacaoTipo @map("localizacao_tipo")
-  localizacaoId   String          @map("localizacao_id")
+  // O que o aviso diz respeito (contexto/local do comunicado).
+  localizacaoTipo LocalizacaoTipoAviso @map("localizacao_tipo")
+  localizacaoId   String?              @map("localizacao_id")
+
+  // Quem recebe o aviso no feed: todo o predio ou so um bloco.
+  destinatarioTipo    DestinatarioAviso @default(TODOS) @map("destinatario_tipo")
+  destinatarioBlocoId String?           @map("destinatario_bloco_id")
 
   status   StatusAviso @default(ATIVO)
   criadoEm DateTime    @default(now()) @map("criado_em")
@@ -307,6 +338,7 @@ model Aviso {
   predio      Predio       @relation(fields: [predioId], references: [id])
   gestor      Gestor       @relation(fields: [gestorId], references: [id])
   comentarios Comentario[]
+  imagens     Imagem[]
 
   @@index([predioId])
   @@map("avisos")
@@ -340,7 +372,7 @@ model Convite {
 
 // ---------------------------------------------------------------------
 // Modulos adicionais trazidos do design de referencia (app de condominio):
-// Financeiro, Reservas, Visitantes, Encomendas e Enquetes. Seguem o mesmo
+// Financeiro, Reservas, Visitantes e Encomendas. Seguem o mesmo
 // padrao de isolamento por predio_id dos modulos originais.
 // ---------------------------------------------------------------------
 
@@ -369,21 +401,6 @@ model Fatura {
   @@map("faturas")
 }
 
-model AreaReservavel {
-  id        String   @id @default(uuid())
-  predioId  String   @map("predio_id")
-  nome      String
-  descricao String?
-  ativa     Boolean  @default(true)
-  criadoEm  DateTime @default(now()) @map("criado_em")
-
-  predio   Predio    @relation(fields: [predioId], references: [id])
-  reservas Reserva[]
-
-  @@index([predioId])
-  @@map("areas_reservaveis")
-}
-
 enum StatusReserva {
   CONFIRMADA
   CANCELADA
@@ -400,9 +417,9 @@ model Reserva {
   status     StatusReserva @default(CONFIRMADA)
   criadoEm   DateTime      @default(now()) @map("criado_em")
 
-  predio  Predio         @relation(fields: [predioId], references: [id])
-  area    AreaReservavel @relation(fields: [areaId], references: [id])
-  usuario Usuario        @relation(fields: [usuarioId], references: [id])
+  predio  Predio     @relation(fields: [predioId], references: [id])
+  area    AreaSocial @relation(fields: [areaId], references: [id])
+  usuario Usuario    @relation(fields: [usuarioId], references: [id])
 
   @@index([predioId])
   @@index([areaId])
@@ -458,55 +475,4 @@ model Encomenda {
   @@index([predioId])
   @@index([usuarioId])
   @@map("encomendas")
-}
-
-enum StatusEnquete {
-  ATIVA
-  ENCERRADA
-}
-
-model Enquete {
-  id        String        @id @default(uuid())
-  predioId  String        @map("predio_id")
-  gestorId  String        @map("gestor_id")
-  titulo    String
-  descricao String?
-  status    StatusEnquete @default(ATIVA)
-  criadoEm  DateTime      @default(now()) @map("criado_em")
-
-  predio       Predio         @relation(fields: [predioId], references: [id])
-  gestor       Gestor         @relation(fields: [gestorId], references: [id])
-  opcoes       OpcaoEnquete[]
-  votoEnquetes VotoEnquete[]
-
-  @@index([predioId])
-  @@map("enquetes")
-}
-
-model OpcaoEnquete {
-  id        String @id @default(uuid())
-  enqueteId String @map("enquete_id")
-  texto     String
-
-  enquete Enquete       @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
-  votos   VotoEnquete[]
-
-  @@map("opcoes_enquete")
-}
-
-// autorId/autorTipo: polimorfico (usuario, funcionario ou gestor podem
-// votar), mesma estrategia de Comentario.
-model VotoEnquete {
-  id        String    @id @default(uuid())
-  enqueteId String    @map("enquete_id")
-  opcaoId   String    @map("opcao_id")
-  autorId   String    @map("autor_id")
-  autorTipo AutorTipo @map("autor_tipo")
-  criadoEm  DateTime  @default(now()) @map("criado_em")
-
-  enquete Enquete      @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
-  opcao   OpcaoEnquete @relation(fields: [opcaoId], references: [id], onDelete: Cascade)
-
-  @@unique([enqueteId, autorId])
-  @@map("votos_enquete")
 }

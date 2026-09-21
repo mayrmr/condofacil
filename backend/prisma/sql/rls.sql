@@ -49,13 +49,10 @@ alter table public.comentarios enable row level security;
 alter table public.imagens enable row level security;
 alter table public.historico_status enable row level security;
 alter table public.faturas enable row level security;
-alter table public.areas_reservaveis enable row level security;
+alter table public.areas_sociais enable row level security;
 alter table public.reservas enable row level security;
 alter table public.visitantes enable row level security;
 alter table public.encomendas enable row level security;
-alter table public.enquetes enable row level security;
-alter table public.opcoes_enquete enable row level security;
-alter table public.votos_enquete enable row level security;
 
 -- RLS so restringe QUAIS linhas aparecem — sem GRANT na tabela em si, o
 -- Postgres nega o acesso inteiro ("permission denied for table ...") antes
@@ -69,13 +66,10 @@ grant select, insert, update, delete on public.comentarios to authenticated;
 grant select, insert on public.imagens to authenticated;
 grant select on public.historico_status to authenticated;
 grant select, update on public.faturas to authenticated;
-grant select, insert, update on public.areas_reservaveis to authenticated;
+grant select, insert, update on public.areas_sociais to authenticated;
 grant select, insert, update on public.reservas to authenticated;
 grant select, insert, delete on public.visitantes to authenticated;
 grant select, update on public.encomendas to authenticated;
-grant select, insert, update on public.enquetes to authenticated;
-grant select, insert on public.opcoes_enquete to authenticated;
-grant select, insert, update on public.votos_enquete to authenticated;
 
 -- drop + create em vez de "create or replace" (policies nao suportam
 -- replace) para o script poder ser reaplicado com seguranca.
@@ -86,13 +80,10 @@ drop policy if exists comentarios_isolamento_predio on public.comentarios;
 drop policy if exists imagens_isolamento_predio on public.imagens;
 drop policy if exists historico_status_isolamento_predio on public.historico_status;
 drop policy if exists faturas_isolamento_predio on public.faturas;
-drop policy if exists areas_reservaveis_isolamento_predio on public.areas_reservaveis;
+drop policy if exists areas_sociais_isolamento_predio on public.areas_sociais;
 drop policy if exists reservas_isolamento_predio on public.reservas;
 drop policy if exists visitantes_isolamento_predio on public.visitantes;
 drop policy if exists encomendas_isolamento_predio on public.encomendas;
-drop policy if exists enquetes_isolamento_predio on public.enquetes;
-drop policy if exists opcoes_enquete_isolamento_predio on public.opcoes_enquete;
-drop policy if exists votos_enquete_isolamento_predio on public.votos_enquete;
 
 -- OCORRENCIAS: visivel/gravavel so por quem pertence ao mesmo predio.
 create policy ocorrencias_isolamento_predio on public.ocorrencias
@@ -134,13 +125,15 @@ create policy historico_status_isolamento_predio on public.historico_status
   for select
   using (exists (select 1 from public.ocorrencias o where o.id = ocorrencia_id and o.predio_id in (select predios_do_usuario_autenticado())));
 
--- Modulos adicionais (Financeiro, Reservas, Visitantes, Encomendas, Enquetes).
+-- Modulos adicionais (Financeiro, Reservas, Visitantes, Encomendas).
 create policy faturas_isolamento_predio on public.faturas
   for all
   using (predio_id in (select predios_do_usuario_autenticado()))
   with check (predio_id in (select predios_do_usuario_autenticado()));
 
-create policy areas_reservaveis_isolamento_predio on public.areas_reservaveis
+-- AREAS_SOCIAIS: usada tanto para localizacao de ocorrencias/avisos quanto
+-- como lista de areas reservaveis (ver Reserva.area).
+create policy areas_sociais_isolamento_predio on public.areas_sociais
   for all
   using (predio_id in (select predios_do_usuario_autenticado()))
   with check (predio_id in (select predios_do_usuario_autenticado()));
@@ -159,19 +152,3 @@ create policy encomendas_isolamento_predio on public.encomendas
   for all
   using (predio_id in (select predios_do_usuario_autenticado()))
   with check (predio_id in (select predios_do_usuario_autenticado()));
-
-create policy enquetes_isolamento_predio on public.enquetes
-  for all
-  using (predio_id in (select predios_do_usuario_autenticado()))
-  with check (predio_id in (select predios_do_usuario_autenticado()));
-
--- OPCOES_ENQUETE e VOTOS_ENQUETE nao tem predio_id proprio — seguem a enquete pai.
-create policy opcoes_enquete_isolamento_predio on public.opcoes_enquete
-  for all
-  using (exists (select 1 from public.enquetes e where e.id = enquete_id and e.predio_id in (select predios_do_usuario_autenticado())))
-  with check (exists (select 1 from public.enquetes e where e.id = enquete_id and e.predio_id in (select predios_do_usuario_autenticado())));
-
-create policy votos_enquete_isolamento_predio on public.votos_enquete
-  for all
-  using (exists (select 1 from public.enquetes e where e.id = enquete_id and e.predio_id in (select predios_do_usuario_autenticado())))
-  with check (exists (select 1 from public.enquetes e where e.id = enquete_id and e.predio_id in (select predios_do_usuario_autenticado())));

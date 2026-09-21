@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { ConfirmarImagemDto } from '../common/dto/confirmar-imagem.dto.js';
 import type { CriarComentarioDto } from '../common/dto/criar-comentario.dto.js';
+import { EXTENSAO_POR_CONTENT_TYPE } from '../common/dto/solicitar-upload-imagem.dto.js';
+import type { SolicitarUploadImagemDto } from '../common/dto/solicitar-upload-imagem.dto.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
 import { NotificacoesService } from '../notificacoes/notificacoes.service.js';
@@ -10,17 +13,9 @@ import type { AtualizarPrioridadeDto } from './dto/atualizar-prioridade.dto.js';
 import type { AtualizarResponsavelDto } from './dto/atualizar-responsavel.dto.js';
 import type { AtualizarStatusDto } from './dto/atualizar-status.dto.js';
 import type { AvaliarOcorrenciaDto } from './dto/avaliar-ocorrencia.dto.js';
-import type { ConfirmarImagemDto } from './dto/confirmar-imagem.dto.js';
 import type { CriarOcorrenciaDto } from './dto/criar-ocorrencia.dto.js';
 import type { ListarOcorrenciasQueryDto } from './dto/listar-ocorrencias-query.dto.js';
-import type { SolicitarUploadImagemDto } from './dto/solicitar-upload-imagem.dto.js';
 import { TransicaoInvalidaError, validarTransicao } from './state-machine/ocorrencia-state-machine.js';
-
-const EXTENSAO_POR_CONTENT_TYPE: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
 
 function inicioDoDia(data: Date): Date {
   const d = new Date(data);

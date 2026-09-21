@@ -8,7 +8,9 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ConfirmarImagemDto } from '../common/dto/confirmar-imagem.dto.js';
 import { CriarComentarioDto } from '../common/dto/criar-comentario.dto.js';
+import { SolicitarUploadImagemDto } from '../common/dto/solicitar-upload-imagem.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
@@ -17,10 +19,8 @@ import { AtualizarPrioridadeDto } from './dto/atualizar-prioridade.dto.js';
 import { AtualizarResponsavelDto } from './dto/atualizar-responsavel.dto.js';
 import { AtualizarStatusDto } from './dto/atualizar-status.dto.js';
 import { AvaliarOcorrenciaDto } from './dto/avaliar-ocorrencia.dto.js';
-import { ConfirmarImagemDto } from './dto/confirmar-imagem.dto.js';
 import { CriarOcorrenciaDto } from './dto/criar-ocorrencia.dto.js';
 import { ListarOcorrenciasQueryDto } from './dto/listar-ocorrencias-query.dto.js';
-import { SolicitarUploadImagemDto } from './dto/solicitar-upload-imagem.dto.js';
 import { OcorrenciasService } from './ocorrencias.service.js';
 
 @Controller('ocorrencias')

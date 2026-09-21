@@ -2,7 +2,6 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { CriarAreaReservavelDto } from './dto/criar-area-reservavel.dto.js';
 import type { CriarReservaDto } from './dto/criar-reserva.dto.js';
 
 @Injectable()
@@ -10,15 +9,9 @@ export class ReservasService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listarAreas(user: AuthUser) {
-    return this.prisma.areaReservavel.findMany({
+    return this.prisma.areaSocial.findMany({
       where: { predioId: { in: user.predioIds } },
       orderBy: { nome: 'asc' },
-    });
-  }
-
-  async criarArea(user: AuthUser, dto: CriarAreaReservavelDto) {
-    return this.prisma.areaReservavel.create({
-      data: { predioId: user.predioIds[0], nome: dto.nome, descricao: dto.descricao },
     });
   }
 
@@ -38,7 +31,7 @@ export class ReservasService {
       throw new ForbiddenException('Somente usuarios podem fazer reservas.');
     }
 
-    const area = await this.prisma.areaReservavel.findUnique({ where: { id: dto.areaId } });
+    const area = await this.prisma.areaSocial.findUnique({ where: { id: dto.areaId } });
     if (!area || !user.predioIds.includes(area.predioId) || !area.ativa) {
       throw new BadRequestException('Area indisponivel para reserva.');
     }

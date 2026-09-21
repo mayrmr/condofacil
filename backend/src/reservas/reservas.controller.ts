@@ -3,7 +3,6 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
-import { CriarAreaReservavelDto } from './dto/criar-area-reservavel.dto.js';
 import { CriarReservaDto } from './dto/criar-reserva.dto.js';
 import { ReservasService } from './reservas.service.js';
 
@@ -11,15 +10,12 @@ import { ReservasService } from './reservas.service.js';
 export class ReservasController {
   constructor(private readonly reservasService: ReservasService) {}
 
+  // As areas em si sao cadastradas so via /predios/:id/areas-sociais (pagina
+  // de estrutura do predio) — aqui e so leitura, para montar o select de
+  // "qual area reservar".
   @Get('areas')
   listarAreas(@CurrentUser() user: AuthUser) {
     return this.reservasService.listarAreas(user);
-  }
-
-  @Roles(Role.GESTOR)
-  @Post('areas')
-  criarArea(@CurrentUser() user: AuthUser, @Body() dto: CriarAreaReservavelDto) {
-    return this.reservasService.criarArea(user, dto);
   }
 
   @Get()
