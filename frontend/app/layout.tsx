@@ -1,23 +1,19 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Quicksand } from 'next/font/google';
+import { Baloo_2, Google_Sans_Flex } from 'next/font/google';
 import { Sidebar } from '@/components/Sidebar';
 import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const googleSansFlex = Google_Sans_Flex({
+  variable: '--font-body',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
-const quicksand = Quicksand({
+const baloo2 = Baloo_2({
   variable: '--font-heading',
   subsets: ['latin'],
-  weight: ['600', '700'],
+  weight: ['600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -27,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} ${quicksand.variable}`}>
+    <html lang="pt-BR" className={`${googleSansFlex.variable} ${baloo2.variable}`}>
       <body>
         <AuthProvider>
           <div className="app-shell">
