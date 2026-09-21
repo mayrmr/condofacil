@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { IconBuilding } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { supabase } from '@/lib/supabase-client';
 
@@ -36,35 +37,72 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="stack page-transition" style={{ maxWidth: 360, margin: '40px auto' }}>
-      <h1>Entrar</h1>
-      <form className="card" onSubmit={handleSubmit}>
-        <div className="field">
-          <label htmlFor="email">E-mail</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+    <div className="login-page page-transition">
+      <div className="login-brand-panel">
+        <div className="login-brand-decor d1" />
+        <div className="login-brand-decor d2" />
+
+        <div className="login-brand-header">
+          <span className="login-brand-icon">
+            <IconBuilding style={{ width: 20, height: 20 }} />
+          </span>
+          Plataforma de Chamados
         </div>
-        <div className="field">
-          <label htmlFor="senha">Senha</label>
-          <input
-            id="senha"
-            type="password"
-            required
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-          />
+
+        <div className="login-brand-copy">
+          <p className="login-brand-headline">Tudo do seu condomínio, em um só lugar.</p>
+          <p>
+            Financeiro, reservas, avisos e ocorrências — acompanhe e resolva tudo sem precisar ir até
+            a portaria.
+          </p>
         </div>
-        {erro && <p className="erro">{erro}</p>}
-        <button type="submit" className="btn-primary" disabled={enviando} style={{ width: '100%' }}>
-          {enviando ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
-      <p className="muted">
-        Não tem conta? <Link href="/registro">Criar conta</Link>
-      </p>
-      <p className="muted">
-        É síndico/gestor e vai cadastrar o condomínio pela primeira vez?{' '}
-        <Link href="/cadastro-empresa">Cadastrar meu condomínio</Link>
-      </p>
+
+        <div className="login-brand-footer">Acesse pelo computador ou pelo celular, direto do navegador.</div>
+      </div>
+
+      <div className="login-form-panel">
+        <div className="login-form-box">
+          <h1>Entrar na sua conta</h1>
+          <p className="login-subtitle">Acesse com o e-mail cadastrado na sua unidade.</p>
+
+          <form className="card login-form" onSubmit={handleSubmit}>
+            <div className="field">
+              <label htmlFor="email">E-mail</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="voce@email.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="senha">Senha</label>
+              <input
+                id="senha"
+                type="password"
+                placeholder="••••••••"
+                required
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+              />
+            </div>
+            {erro && <p className="erro">{erro}</p>}
+            <button type="submit" className="btn-primary login-submit" disabled={enviando}>
+              {enviando ? 'Entrando...' : 'Entrar'}
+            </button>
+          </form>
+
+          <p className="login-footer-links">
+            Não tem conta? <Link href="/registro">Criar conta</Link>
+          </p>
+          <p className="login-footer-links">
+            É síndico/gestor e vai cadastrar o condomínio pela primeira vez?{' '}
+            <Link href="/cadastro-empresa">Cadastrar meu condomínio</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
