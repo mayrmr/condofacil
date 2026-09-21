@@ -1,54 +1,17 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { RequireAuth } from '@/components/RequireAuth';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import type { AreaReservavel, Reserva } from '@/lib/types';
+import type { AreaSocial, Reserva } from '@/lib/types';
 
 function formatarData(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR');
 }
 
-function NovaAreaForm({ aoCriar }: { aoCriar: () => void }) {
-  const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setErro(null);
-    try {
-      await api.post('/reservas/areas', { nome, descricao: descricao || undefined });
-      setNome('');
-      setDescricao('');
-      aoCriar();
-    } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Não foi possível criar a área.');
-    }
-  }
-
-  return (
-    <form className="card" onSubmit={handleSubmit}>
-      <h2>Nova área reservável</h2>
-      <div className="row" style={{ marginTop: 8 }}>
-        <input placeholder="Ex: Salão de festas" value={nome} onChange={(e) => setNome(e.target.value)} style={{ flex: 1 }} />
-        <input
-          placeholder="Descrição (opcional)"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          style={{ flex: 1 }}
-        />
-        <button type="submit" className="btn-primary">
-          Adicionar
-        </button>
-      </div>
-      {erro && <p className="erro">{erro}</p>}
-    </form>
-  );
-}
-
-function NovaReservaForm({ areas, aoCriar }: { areas: AreaReservavel[]; aoCriar: () => void }) {
+function NovaReservaForm({ areas, aoCriar }: { areas: AreaSocial[]; aoCriar: () => void }) {
   const [areaId, setAreaId] = useState('');
   const [data, setData] = useState('');
   const [horaInicio, setHoraInicio] = useState('');
@@ -108,13 +71,13 @@ function NovaReservaForm({ areas, aoCriar }: { areas: AreaReservavel[]; aoCriar:
 
 function ConteudoReservas() {
   const { perfil } = useAuth();
-  const [areas, setAreas] = useState<AreaReservavel[]>([]);
+  const [areas, setAreas] = useState<AreaSocial[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   async function carregar() {
     const [a, r] = await Promise.all([
-      api.get<AreaReservavel[]>('/reservas/areas'),
+      api.get<AreaSocial[]>('/reservas/areas'),
       api.get<Reserva[]>('/reservas'),
     ]);
     setAreas(a);
@@ -152,9 +115,17 @@ function ConteudoReservas() {
           ))}
           {areas.length === 0 && <p className="muted">Nenhuma área cadastrada ainda.</p>}
         </div>
+        {perfil?.role === 'GESTOR' && (
+          <p className="muted" style={{ marginTop: 12 }}>
+            Para cadastrar ou editar áreas, use a{' '}
+            <Link href="/predio/estrutura" style={{ textDecoration: 'underline' }}>
+              Estrutura do prédio
+            </Link>
+            .
+          </p>
+        )}
       </div>
 
-      {perfil?.role === 'GESTOR' && <NovaAreaForm aoCriar={carregar} />}
       {perfil?.role === 'USUARIO' && <NovaReservaForm areas={areas} aoCriar={carregar} />}
 
       <div className="card">

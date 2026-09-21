@@ -6,7 +6,6 @@ import type { SVGProps } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import type { Role } from '@/lib/types';
 import {
-  IconBarChart,
   IconBell,
   IconBuilding,
   IconCalendar,
@@ -36,7 +35,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/reservas', label: 'Reservas', icon: IconCalendar },
   { href: '/visitantes', label: 'Visitantes', icon: IconUsers, roles: ['USUARIO'] },
   { href: '/encomendas', label: 'Encomendas', icon: IconPackage },
-  { href: '/enquetes', label: 'Enquetes', icon: IconBarChart },
   { href: '/dashboard', label: 'Dashboard', icon: IconGrid, roles: ['FUNCIONARIO', 'GESTOR'] },
   { href: '/predio/estrutura', label: 'Estrutura do prédio', icon: IconBuilding, roles: ['GESTOR'] },
   { href: '/gestor/convidar', label: 'Convidar', icon: IconUserPlus, roles: ['GESTOR'] },

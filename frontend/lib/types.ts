@@ -13,6 +13,8 @@ export type StatusOcorrencia =
 export type Prioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 
 export type LocalizacaoTipo = 'BLOCO' | 'APARTAMENTO' | 'AREA_SOCIAL';
+export type LocalizacaoTipoAviso = 'AREA_SOCIAL' | 'BLOCO' | 'GERAL';
+export type DestinatarioAviso = 'TODOS' | 'BLOCO';
 
 export type StatusAviso = 'ATIVO' | 'ENCERRADO';
 
@@ -20,7 +22,6 @@ export type StatusFatura = 'EM_ABERTO' | 'PAGA' | 'ATRASADA';
 export type StatusReserva = 'CONFIRMADA' | 'CANCELADA';
 export type StatusVisitante = 'AUTORIZADO' | 'EXPIRADO';
 export type StatusEncomenda = 'AGUARDANDO_RETIRADA' | 'RETIRADA';
-export type StatusEnquete = 'ATIVA' | 'ENCERRADA';
 
 export interface Ocorrencia {
   id: string;
@@ -57,7 +58,8 @@ export interface Comentario {
 
 export interface Imagem {
   id: string;
-  ocorrenciaId: string;
+  ocorrenciaId?: string | null;
+  avisoId?: string | null;
   storageUrl: string;
 }
 
@@ -79,11 +81,14 @@ export interface Aviso {
   titulo: string;
   descricao: string;
   categoria: string;
-  localizacaoTipo: LocalizacaoTipo;
-  localizacaoId: string;
+  localizacaoTipo: LocalizacaoTipoAviso;
+  localizacaoId: string | null;
+  destinatarioTipo: DestinatarioAviso;
+  destinatarioBlocoId: string | null;
   status: StatusAviso;
   criadoEm: string;
   comentarios?: Comentario[];
+  imagens?: (Imagem & { url: string })[];
 }
 
 export interface Predio {
@@ -91,6 +96,7 @@ export interface Predio {
   empresaId: string;
   nome: string;
   endereco: string;
+  codigoConvite: string;
 }
 
 export interface Apartamento {
@@ -110,6 +116,8 @@ export interface AreaSocial {
   id: string;
   predioId: string;
   nome: string;
+  descricao: string | null;
+  ativa: boolean;
 }
 
 export interface PerfilUsuario {
@@ -149,14 +157,6 @@ export interface Fatura {
   criadoEm: string;
 }
 
-export interface AreaReservavel {
-  id: string;
-  predioId: string;
-  nome: string;
-  descricao: string | null;
-  ativa: boolean;
-}
-
 export interface Reserva {
   id: string;
   predioId: string;
@@ -167,7 +167,7 @@ export interface Reserva {
   horaFim: string;
   status: StatusReserva;
   criadoEm: string;
-  area?: AreaReservavel;
+  area?: AreaSocial;
 }
 
 export interface Visitante {
@@ -190,23 +190,4 @@ export interface Encomenda {
   status: StatusEncomenda;
   chegadaEm: string;
   retiradaEm: string | null;
-}
-
-export interface OpcaoEnquete {
-  id: string;
-  enqueteId: string;
-  texto: string;
-  _count?: { votos: number };
-}
-
-export interface Enquete {
-  id: string;
-  predioId: string;
-  gestorId: string;
-  titulo: string;
-  descricao: string | null;
-  status: StatusEnquete;
-  criadoEm: string;
-  opcoes: OpcaoEnquete[];
-  minhaOpcaoId: string | null;
 }

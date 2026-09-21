@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { RequireAuth } from '@/components/RequireAuth';
-import { IconBarChart, IconBell, IconCalendar, IconPackage, IconPlus } from '@/components/icons';
+import { IconBell, IconCalendar, IconPackage, IconPlus } from '@/components/icons';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { formatarData } from '@/lib/formatacao';
@@ -18,7 +18,6 @@ function AcessoRapido() {
       ? [{ href: '/ocorrencias/nova', label: 'Abrir ocorrência', icon: IconPlus }]
       : []),
     { href: '/encomendas', label: 'Encomendas', icon: IconPackage },
-    { href: '/enquetes', label: 'Enquetes', icon: IconBarChart },
   ];
 
   return (

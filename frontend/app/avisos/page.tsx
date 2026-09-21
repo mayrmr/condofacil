@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useEffect, useState, type FormEvent } from 'react';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconAlertCircle, IconBell } from '@/components/icons';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { formatarData } from '@/lib/formatacao';
-import type { AreaSocial, Aviso, Bloco, LocalizacaoTipo, PerfilFuncionarioOuGestor } from '@/lib/types';
+import type { Aviso } from '@/lib/types';
 
 const CATEGORIAS_URGENTES = ['assembleia', 'urgente', 'seguranca'];
 
@@ -21,97 +22,6 @@ function grupoDoAviso(criadoEm: string): 'HOJE' | 'ESTA SEMANA' | 'ANTERIORES' {
   if (data.toDateString() === agora.toDateString()) return 'HOJE';
   if (diffDias <= 7) return 'ESTA SEMANA';
   return 'ANTERIORES';
-}
-
-function NovoAvisoForm({ predioId, aoCriar }: { predioId: string; aoCriar: () => void }) {
-  const [blocos, setBlocos] = useState<Bloco[]>([]);
-  const [areasSociais, setAreasSociais] = useState<AreaSocial[]>([]);
-  const [titulo, setTitulo] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [categoria, setCategoria] = useState('geral');
-  const [localizacaoTipo, setLocalizacaoTipo] = useState<LocalizacaoTipo>('AREA_SOCIAL');
-  const [localizacaoId, setLocalizacaoId] = useState('');
-  const [erro, setErro] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.get<Bloco[]>(`/predios/${predioId}/blocos`).then(setBlocos);
-    api.get<AreaSocial[]>(`/predios/${predioId}/areas-sociais`).then(setAreasSociais);
-  }, [predioId]);
-
-  const opcoes = useMemo(() => {
-    if (localizacaoTipo === 'BLOCO') return blocos.map((b) => ({ id: b.id, label: b.nome }));
-    if (localizacaoTipo === 'APARTAMENTO') {
-      return blocos.flatMap((b) => b.apartamentos.map((a) => ({ id: a.id, label: `${b.nome} — apto ${a.numero}` })));
-    }
-    return areasSociais.map((a) => ({ id: a.id, label: a.nome }));
-  }, [localizacaoTipo, blocos, areasSociais]);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!localizacaoId) {
-      setErro('Selecione a localização do aviso.');
-      return;
-    }
-    try {
-      await api.post('/avisos', { titulo, descricao, categoria, localizacaoTipo, localizacaoId });
-      setTitulo('');
-      setDescricao('');
-      setLocalizacaoId('');
-      aoCriar();
-    } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Não foi possível criar o aviso.');
-    }
-  }
-
-  return (
-    <form className="card" onSubmit={handleSubmit}>
-      <h2>Novo aviso</h2>
-      <div className="field" style={{ marginTop: 8 }}>
-        <label htmlFor="titulo">Título</label>
-        <input id="titulo" required value={titulo} onChange={(e) => setTitulo(e.target.value)} />
-      </div>
-      <div className="field">
-        <label htmlFor="descricao">Descrição</label>
-        <textarea id="descricao" required value={descricao} onChange={(e) => setDescricao(e.target.value)} />
-      </div>
-      <div className="field">
-        <label htmlFor="categoria">Categoria</label>
-        <input id="categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
-      </div>
-      <div className="row">
-        <div className="field" style={{ flex: 1 }}>
-          <label htmlFor="localizacaoTipo">Tipo de local</label>
-          <select
-            id="localizacaoTipo"
-            value={localizacaoTipo}
-            onChange={(e) => {
-              setLocalizacaoTipo(e.target.value as LocalizacaoTipo);
-              setLocalizacaoId('');
-            }}
-          >
-            <option value="AREA_SOCIAL">Área social</option>
-            <option value="BLOCO">Bloco</option>
-            <option value="APARTAMENTO">Apartamento</option>
-          </select>
-        </div>
-        <div className="field" style={{ flex: 1 }}>
-          <label htmlFor="localizacaoId">Local</label>
-          <select id="localizacaoId" value={localizacaoId} onChange={(e) => setLocalizacaoId(e.target.value)}>
-            <option value="">Selecione...</option>
-            {opcoes.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      {erro && <p className="erro">{erro}</p>}
-      <button type="submit" className="btn-primary">
-        Publicar aviso
-      </button>
-    </form>
-  );
 }
 
 function LinhaAviso({
@@ -181,6 +91,20 @@ function LinhaAviso({
         <div style={{ marginTop: 12, paddingLeft: 52 }}>
           <p>{aviso.descricao}</p>
 
+          {aviso.imagens && aviso.imagens.length > 0 && (
+            <div className="row" style={{ marginTop: 12, flexWrap: 'wrap' }}>
+              {aviso.imagens.map((img) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={img.id}
+                  src={img.url}
+                  alt=""
+                  style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8 }}
+                />
+              ))}
+            </div>
+          )}
+
           <div className="chat" style={{ marginTop: 12 }}>
             {aviso.comentarios?.map((c) => (
               <div key={c.id} className={`chat-bubble ${c.autorId === perfil?.id ? 'mine' : ''}`}>
@@ -227,9 +151,6 @@ function ListaAvisos() {
     carregar();
   }, []);
 
-  const predioIdGestor =
-    perfil?.role === 'GESTOR' ? (perfil as PerfilFuncionarioOuGestor).predios?.[0]?.predio.id : undefined;
-
   const grupos: Record<string, Aviso[]> = { HOJE: [], 'ESTA SEMANA': [], ANTERIORES: [] };
   for (const aviso of avisos) {
     grupos[grupoDoAviso(aviso.criadoEm)].push(aviso);
@@ -237,8 +158,14 @@ function ListaAvisos() {
 
   return (
     <div className="stack">
-      <h1>Avisos</h1>
-      {predioIdGestor && <NovoAvisoForm predioId={predioIdGestor} aoCriar={carregar} />}
+      <div className="row-between">
+        <h1>Avisos</h1>
+        {perfil?.role === 'GESTOR' && (
+          <Link href="/avisos/novo" className="btn btn-primary">
+            + Novo aviso
+          </Link>
+        )}
+      </div>
       {carregando && <p className="muted">Carregando...</p>}
       {!carregando && avisos.length === 0 && <p className="muted">Nenhum aviso publicado ainda.</p>}
       {(['HOJE', 'ESTA SEMANA', 'ANTERIORES'] as const)

@@ -6,6 +6,47 @@ import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import type { PerfilFuncionarioOuGestor, Role } from '@/lib/types';
 
+function LinkConviteMoradores() {
+  const { perfil } = useAuth();
+  const predios = (perfil as PerfilFuncionarioOuGestor | null)?.predios ?? [];
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
+
+  async function copiar(link: string, predioId: string) {
+    await navigator.clipboard.writeText(link);
+    setCopiadoId(predioId);
+    setTimeout(() => setCopiadoId((atual) => (atual === predioId ? null : atual)), 2000);
+  }
+
+  if (predios.length === 0) return null;
+
+  return (
+    <div className="card">
+      <h2>Convidar moradores</h2>
+      <p className="muted" style={{ marginTop: 8 }}>
+        Compartilhe este link com os moradores do seu condomínio para que eles criem a própria conta.
+      </p>
+      <div className="stack" style={{ marginTop: 12 }}>
+        {predios.map(({ predio }) => {
+          const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${predio.codigoConvite}`;
+          return (
+            <div key={predio.id} className="row-between">
+              <div>
+                <strong>{predio.nome}</strong>
+                <p className="muted">
+                  <code>{link}</code>
+                </p>
+              </div>
+              <button type="button" onClick={() => copiar(link, predio.id)}>
+                {copiadoId === predio.id ? 'Copiado!' : 'Copiar link'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function FormularioConvite() {
   const { perfil } = useAuth();
   const predioIds = (perfil as PerfilFuncionarioOuGestor | null)?.predios?.map((p) => p.predio.id) ?? [];
@@ -39,7 +80,11 @@ function FormularioConvite() {
 
   return (
     <div className="stack">
-      <h1>Convidar funcionário ou gestor</h1>
+      <h1>Convidar</h1>
+
+      <LinkConviteMoradores />
+
+      <h2>Convidar funcionário ou gestor</h2>
       <form className="card" onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="email">E-mail do convidado</label>

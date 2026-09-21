@@ -18,6 +18,9 @@ function FormularioRegistro() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
+  const nomePredio = searchParams.get('nomePredio');
+  const predioPreenchido = Boolean(nomePredio && predioId);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErro(null);
@@ -74,16 +77,22 @@ function FormularioRegistro() {
           onChange={(e) => setSenha(e.target.value)}
         />
       </div>
-      <div className="field">
-        <label htmlFor="predioId">ID do prédio</label>
-        <input
-          id="predioId"
-          required
-          value={predioId}
-          onChange={(e) => setPredioId(e.target.value)}
-          placeholder="Informado pelo síndico/gestor do seu condomínio"
-        />
-      </div>
+      {predioPreenchido ? (
+        <p className="muted" style={{ marginBottom: 14 }}>
+          Você está se cadastrando em: <strong>{nomePredio}</strong>
+        </p>
+      ) : (
+        <div className="field">
+          <label htmlFor="predioId">ID do prédio</label>
+          <input
+            id="predioId"
+            required
+            value={predioId}
+            onChange={(e) => setPredioId(e.target.value)}
+            placeholder="Informado pelo síndico/gestor do seu condomínio"
+          />
+        </div>
+      )}
       <div className="field">
         <label htmlFor="apartamentoId">ID do apartamento (opcional)</label>
         <input id="apartamentoId" value={apartamentoId} onChange={(e) => setApartamentoId(e.target.value)} />

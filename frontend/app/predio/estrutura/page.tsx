@@ -14,6 +14,7 @@ function GerenciarEstrutura() {
   const [areasSociais, setAreasSociais] = useState<AreaSocial[]>([]);
   const [nomeBloco, setNomeBloco] = useState('');
   const [nomeArea, setNomeArea] = useState('');
+  const [descricaoArea, setDescricaoArea] = useState('');
   const [numeroApartamento, setNumeroApartamento] = useState<Record<string, string>>({});
   const [erro, setErro] = useState<string | null>(null);
 
@@ -49,8 +50,12 @@ function GerenciarEstrutura() {
     e.preventDefault();
     if (!predioId || !nomeArea.trim()) return;
     try {
-      await api.post(`/predios/${predioId}/areas-sociais`, { nome: nomeArea });
+      await api.post(`/predios/${predioId}/areas-sociais`, {
+        nome: nomeArea,
+        descricao: descricaoArea || undefined,
+      });
       setNomeArea('');
+      setDescricaoArea('');
       await carregar();
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : 'Não foi possível criar a área social.');
@@ -77,7 +82,8 @@ function GerenciarEstrutura() {
       <h1>Estrutura do prédio</h1>
       <p className="muted">
         Cadastre os blocos, apartamentos e áreas sociais para que os moradores possam escolher a localização
-        ao abrir uma ocorrência.
+        ao abrir uma ocorrência ou publicar um aviso. As áreas sociais cadastradas aqui também aparecem na
+        aba Reservas para os moradores reservarem.
       </p>
       {erro && <p className="erro">{erro}</p>}
 
@@ -85,7 +91,10 @@ function GerenciarEstrutura() {
         <h2>Áreas sociais</h2>
         <div className="stack" style={{ marginTop: 8 }}>
           {areasSociais.map((a) => (
-            <div key={a.id}>{a.nome}</div>
+            <div key={a.id}>
+              <strong>{a.nome}</strong>
+              {a.descricao && <p className="muted">{a.descricao}</p>}
+            </div>
           ))}
           {areasSociais.length === 0 && <p className="muted">Nenhuma área social cadastrada.</p>}
         </div>
@@ -94,6 +103,12 @@ function GerenciarEstrutura() {
             placeholder="Ex: Salão de festas"
             value={nomeArea}
             onChange={(e) => setNomeArea(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <input
+            placeholder="Descrição (opcional)"
+            value={descricaoArea}
+            onChange={(e) => setDescricaoArea(e.target.value)}
             style={{ flex: 1 }}
           />
           <button type="submit" className="btn-primary">
