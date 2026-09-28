@@ -5,14 +5,51 @@ import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { RequireAuth } from '@/components/RequireAuth';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { LABEL_STATUS } from '@/lib/formatacao';
-import type { Ocorrencia, PerfilFuncionarioOuGestor } from '@/lib/types';
+import { COR_STATUS, LABEL_STATUS, tempoRelativo } from '@/lib/formatacao';
+import type { Ocorrencia, PerfilFuncionarioOuGestor, StatusOcorrencia } from '@/lib/types';
 
 const VISOES_FUNCIONARIO = ['kanban', 'calendario', 'lista', 'prioridades'] as const;
 const VISOES_GESTOR = [...VISOES_FUNCIONARIO, 'funcionarios', 'areas'] as const;
 
 type Visao = (typeof VISOES_GESTOR)[number];
 type ResultadoDashboard = Ocorrencia[] | Record<string, Ocorrencia[]>;
+
+function CartaoKanban({ ocorrencia }: { ocorrencia: Ocorrencia }) {
+  const urgente = ocorrencia.prioridade === 'URGENTE';
+  return (
+    <a href={`/ocorrencias/${ocorrencia.id}`} className="kanban-card">
+      <span className={`categoria-badge${urgente ? ' urgente' : ''}`}>
+        {urgente ? 'Urgente' : ocorrencia.categoria}
+      </span>
+      <strong>{ocorrencia.titulo}</strong>
+      {ocorrencia.usuario && <span className="autor">{ocorrencia.usuario.nomeCompleto}</span>}
+      <span className="tempo">{tempoRelativo(ocorrencia.criadoEm)}</span>
+    </a>
+  );
+}
+
+function ColunaKanban({
+  titulo,
+  itens,
+  cor,
+}: {
+  titulo: string;
+  itens: Ocorrencia[];
+  cor?: string;
+}) {
+  return (
+    <div className="coluna">
+      <div className="coluna-header">
+        {cor && <span className="coluna-dot" style={{ background: cor }} />}
+        <span className="coluna-titulo">{titulo}</span>
+        <span className="coluna-count">{itens.length}</span>
+      </div>
+      {itens.map((o) => (
+        <CartaoKanban key={o.id} ocorrencia={o} />
+      ))}
+    </div>
+  );
+}
 
 function ConteudoDashboard() {
   const { perfil } = useAuth();
@@ -45,7 +82,7 @@ function ConteudoDashboard() {
 
   return (
     <div>
-      <h1>Dashboard</h1>
+      <h1>Ocorrências</h1>
       <div className="tabs">
         {visoes.map((v) => (
           <button key={v} className={v === visao ? 'ativo' : ''} onClick={() => setVisao(v)}>
@@ -67,14 +104,12 @@ function ConteudoDashboard() {
       {!carregando && visao === 'kanban' && (
         <div className="kanban">
           {Object.entries(dados as Record<string, Ocorrencia[]>).map(([status, itens]) => (
-            <div key={status} className="coluna">
-              <h3>{LABEL_STATUS[status as keyof typeof LABEL_STATUS] ?? status}</h3>
-              {itens.map((o) => (
-                <a key={o.id} href={`/ocorrencias/${o.id}`} className="item">
-                  {o.titulo}
-                </a>
-              ))}
-            </div>
+            <ColunaKanban
+              key={status}
+              titulo={LABEL_STATUS[status as StatusOcorrencia] ?? status}
+              itens={itens}
+              cor={COR_STATUS[status as StatusOcorrencia]}
+            />
           ))}
         </div>
       )}
@@ -82,14 +117,7 @@ function ConteudoDashboard() {
       {!carregando && visao === 'prioridades' && (
         <div className="kanban">
           {Object.entries(dados as Record<string, Ocorrencia[]>).map(([prioridade, itens]) => (
-            <div key={prioridade} className="coluna">
-              <h3>{prioridade}</h3>
-              {itens.map((o) => (
-                <a key={o.id} href={`/ocorrencias/${o.id}`} className="item">
-                  {o.titulo}
-                </a>
-              ))}
-            </div>
+            <ColunaKanban key={prioridade} titulo={prioridade} itens={itens} />
           ))}
         </div>
       )}
@@ -116,14 +144,7 @@ function ConteudoDashboard() {
       {!carregando && visao === 'funcionarios' && (
         <div className="kanban">
           {Object.entries(dados as Record<string, Ocorrencia[]>).map(([funcionarioId, itens]) => (
-            <div key={funcionarioId} className="coluna">
-              <h3>{nomeFuncionario(funcionarioId)}</h3>
-              {itens.map((o) => (
-                <a key={o.id} href={`/ocorrencias/${o.id}`} className="item">
-                  {o.titulo}
-                </a>
-              ))}
-            </div>
+            <ColunaKanban key={funcionarioId} titulo={nomeFuncionario(funcionarioId)} itens={itens} />
           ))}
         </div>
       )}
@@ -131,14 +152,7 @@ function ConteudoDashboard() {
       {!carregando && visao === 'areas' && (
         <div className="kanban">
           {Object.entries(dados as Record<string, Ocorrencia[]>).map(([area, itens]) => (
-            <div key={area} className="coluna">
-              <h3>{area}</h3>
-              {itens.map((o) => (
-                <a key={o.id} href={`/ocorrencias/${o.id}`} className="item">
-                  {o.titulo}
-                </a>
-              ))}
-            </div>
+            <ColunaKanban key={area} titulo={area} itens={itens} />
           ))}
         </div>
       )}

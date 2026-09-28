@@ -14,3 +14,27 @@ export const LABEL_STATUS: Record<StatusOcorrencia, string> = {
 export function formatarData(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
+
+// Cor do indicador de cada etapa do kanban — reaproveita a mesma paleta
+// semantica das .badge-* (ver globals.css).
+export const COR_STATUS: Record<StatusOcorrencia, string> = {
+  ABERTURA: 'var(--muted)',
+  ANALISE: 'var(--warning)',
+  ATENDIMENTO: 'var(--primary)',
+  AGUARDA_MATERIAL: 'var(--warning)',
+  RESOLVIDA: 'var(--success)',
+  CANCELAMENTO: 'var(--danger)',
+  AVALIACAO: 'var(--success)',
+  EXCLUIDA: 'var(--danger)',
+};
+
+export function tempoRelativo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  if (diffMin < 1) return 'agora mesmo';
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `há ${diffH} h`;
+  const diffD = Math.round(diffH / 24);
+  return `há ${diffD} d`;
+}

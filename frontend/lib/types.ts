@@ -44,6 +44,7 @@ export interface Ocorrencia {
   criadoEm: string;
   comentarios?: Comentario[];
   imagens?: (Imagem & { url: string })[];
+  usuario?: { nomeCompleto: string };
 }
 
 export interface Comentario {
