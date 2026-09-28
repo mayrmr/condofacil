@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch, IconX } from '@/components/icons';
@@ -151,30 +151,87 @@ function ColunaKanban({
   );
 }
 
-function FiltroSelect({
-  valor,
-  ativo,
-  aoMudar,
-  aoLimpar,
-  children,
-}: {
+interface OpcaoFiltro {
   valor: string;
+  texto: string;
+}
+
+function FiltroDropdown({
+  label,
+  valorSelecionado,
+  ativo,
+  opcoes,
+  aoSelecionar,
+  aoLimpar,
+}: {
+  label: string;
+  valorSelecionado: string;
   ativo: boolean;
-  aoMudar: (v: string) => void;
+  opcoes: OpcaoFiltro[];
+  aoSelecionar: (v: string) => void;
   aoLimpar: () => void;
-  children: React.ReactNode;
 }) {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    function aoClicarFora(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setAberto(false);
+    }
+    document.addEventListener('mousedown', aoClicarFora);
+    return () => document.removeEventListener('mousedown', aoClicarFora);
+  }, [aberto]);
+
   return (
-    <span className={`filtro-select-wrap${ativo ? ' ativo' : ''}`}>
-      <select value={valor} onChange={(e) => aoMudar(e.target.value)}>
-        {children}
-      </select>
-      {ativo && (
-        <button type="button" className="filtro-limpar-um" onClick={aoLimpar} aria-label="Limpar filtro">
-          <IconX />
-        </button>
+    <div className="filtro-dropdown" ref={ref}>
+      <button
+        type="button"
+        className={`filtro-dropdown-toggle${ativo ? ' ativo' : ''}`}
+        onClick={() => setAberto((a) => !a)}
+      >
+        {label}
+        {ativo && (
+          <span
+            className="filtro-limpar-um"
+            role="button"
+            tabIndex={0}
+            aria-label={`Limpar filtro de ${label}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              aoLimpar();
+              setAberto(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+                aoLimpar();
+                setAberto(false);
+              }
+            }}
+          >
+            <IconX />
+          </span>
+        )}
+      </button>
+      {aberto && (
+        <div className="filtro-dropdown-menu">
+          {opcoes.map((o) => (
+            <button
+              key={o.valor}
+              type="button"
+              className={`filtro-opcao${o.valor === valorSelecionado ? ' selecionada' : ''}`}
+              onClick={() => {
+                aoSelecionar(o.valor);
+                setAberto(false);
+              }}
+            >
+              {o.texto}
+            </button>
+          ))}
+        </div>
       )}
-    </span>
+    </div>
   );
 }
 
@@ -311,90 +368,70 @@ function ConteudoDashboard() {
           Filtros
         </span>
 
-        <FiltroSelect
-          valor={filtros.status}
+        <FiltroDropdown
+          label="Status"
+          valorSelecionado={filtros.status}
           ativo={filtros.status !== ''}
-          aoMudar={(v) => setFiltros((f) => ({ ...f, status: v }))}
+          opcoes={[
+            { valor: '', texto: 'Todos' },
+            ...ETAPAS_KANBAN.map((s) => ({ valor: s, texto: LABEL_STATUS[s] })),
+          ]}
+          aoSelecionar={(v) => setFiltros((f) => ({ ...f, status: v }))}
           aoLimpar={() => limparFiltro('status')}
-        >
-          <option value="">Status: todos</option>
-          {ETAPAS_KANBAN.map((s) => (
-            <option key={s} value={s}>
-              Status: {LABEL_STATUS[s]}
-            </option>
-          ))}
-        </FiltroSelect>
+        />
 
-        <FiltroSelect
-          valor={filtros.prioridade}
+        <FiltroDropdown
+          label="Prioridade"
+          valorSelecionado={filtros.prioridade}
           ativo={filtros.prioridade !== ''}
-          aoMudar={(v) => setFiltros((f) => ({ ...f, prioridade: v }))}
+          opcoes={[
+            { valor: '', texto: 'Todas' },
+            ...PRIORIDADES.map((p) => ({ valor: p, texto: p.charAt(0) + p.slice(1).toLowerCase() })),
+          ]}
+          aoSelecionar={(v) => setFiltros((f) => ({ ...f, prioridade: v }))}
           aoLimpar={() => limparFiltro('prioridade')}
-        >
-          <option value="">Prioridade: todas</option>
-          {PRIORIDADES.map((p) => (
-            <option key={p} value={p}>
-              Prioridade: {p.toLowerCase()}
-            </option>
-          ))}
-        </FiltroSelect>
+        />
 
-        <FiltroSelect
-          valor={filtros.categoria}
+        <FiltroDropdown
+          label="Categoria"
+          valorSelecionado={filtros.categoria}
           ativo={filtros.categoria !== ''}
-          aoMudar={(v) => setFiltros((f) => ({ ...f, categoria: v }))}
+          opcoes={[{ valor: '', texto: 'Todas' }, ...CATEGORIAS.map((c) => ({ valor: c, texto: c }))]}
+          aoSelecionar={(v) => setFiltros((f) => ({ ...f, categoria: v }))}
           aoLimpar={() => limparFiltro('categoria')}
-        >
-          <option value="">Categoria: todas</option>
-          {CATEGORIAS.map((c) => (
-            <option key={c} value={c}>
-              Categoria: {c}
-            </option>
-          ))}
-        </FiltroSelect>
+        />
 
-        <FiltroSelect
-          valor={filtros.blocoId}
+        <FiltroDropdown
+          label="Bloco"
+          valorSelecionado={filtros.blocoId}
           ativo={filtros.blocoId !== ''}
-          aoMudar={(v) => setFiltros((f) => ({ ...f, blocoId: v }))}
+          opcoes={[{ valor: '', texto: 'Todos' }, ...blocos.map((b) => ({ valor: b.id, texto: b.nome }))]}
+          aoSelecionar={(v) => setFiltros((f) => ({ ...f, blocoId: v }))}
           aoLimpar={() => limparFiltro('blocoId')}
-        >
-          <option value="">Bloco: todos</option>
-          {blocos.map((b) => (
-            <option key={b.id} value={b.id}>
-              Bloco: {b.nome}
-            </option>
-          ))}
-        </FiltroSelect>
+        />
 
         {perfil?.role === 'GESTOR' && (
-          <FiltroSelect
-            valor={filtros.responsavelFuncionarioId}
+          <FiltroDropdown
+            label="Responsável"
+            valorSelecionado={filtros.responsavelFuncionarioId}
             ativo={filtros.responsavelFuncionarioId !== ''}
-            aoMudar={(v) => setFiltros((f) => ({ ...f, responsavelFuncionarioId: v }))}
+            opcoes={[
+              { valor: '', texto: 'Todos' },
+              ...funcionarios.map((f) => ({ valor: f.id, texto: f.nomeCompleto })),
+            ]}
+            aoSelecionar={(v) => setFiltros((f) => ({ ...f, responsavelFuncionarioId: v }))}
             aoLimpar={() => limparFiltro('responsavelFuncionarioId')}
-          >
-            <option value="">Responsável: todos</option>
-            {funcionarios.map((f) => (
-              <option key={f.id} value={f.id}>
-                Responsável: {f.nomeCompleto}
-              </option>
-            ))}
-          </FiltroSelect>
+          />
         )}
 
-        <FiltroSelect
-          valor={filtros.periodoDias ? String(filtros.periodoDias) : ''}
+        <FiltroDropdown
+          label="Período"
+          valorSelecionado={filtros.periodoDias ? String(filtros.periodoDias) : ''}
           ativo={filtros.periodoDias !== FILTROS_PADRAO.periodoDias}
-          aoMudar={(v) => setFiltros((f) => ({ ...f, periodoDias: v ? Number(v) : undefined }))}
+          opcoes={PERIODOS.map((p) => ({ valor: p.dias ? String(p.dias) : '', texto: p.label }))}
+          aoSelecionar={(v) => setFiltros((f) => ({ ...f, periodoDias: v ? Number(v) : undefined }))}
           aoLimpar={() => limparFiltro('periodoDias')}
-        >
-          {PERIODOS.map((p) => (
-            <option key={p.label} value={p.dias ?? ''}>
-              Período: {p.label}
-            </option>
-          ))}
-        </FiltroSelect>
+        />
 
         {filtrosAtivos && (
           <button type="button" className="filtros-limpar-todos" onClick={() => setFiltros(FILTROS_PADRAO)}>
