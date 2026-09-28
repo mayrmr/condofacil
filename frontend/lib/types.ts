@@ -18,7 +18,7 @@ export type DestinatarioAviso = 'TODOS' | 'BLOCO';
 
 export type StatusAviso = 'ATIVO' | 'ENCERRADO';
 
-export type StatusReserva = 'CONFIRMADA' | 'CANCELADA';
+export type StatusReserva = 'PENDENTE' | 'CONFIRMADA' | 'CANCELADA';
 export type StatusVisitante = 'AUTORIZADO' | 'EXPIRADO';
 export type StatusEncomenda = 'AGUARDANDO_RETIRADA' | 'RETIRADA';
 

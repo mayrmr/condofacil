@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
@@ -32,5 +32,17 @@ export class ReservasController {
   @Delete(':id')
   cancelar(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.reservasService.cancelar(user, id);
+  }
+
+  @Roles(Role.GESTOR)
+  @Patch(':id/aprovar')
+  aprovar(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.reservasService.aprovar(user, id);
+  }
+
+  @Roles(Role.GESTOR)
+  @Patch(':id/recusar')
+  recusar(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.reservasService.recusar(user, id);
   }
 }

@@ -375,6 +375,7 @@ model Convite {
 // ---------------------------------------------------------------------
 
 enum StatusReserva {
+  PENDENTE
   CONFIRMADA
   CANCELADA
 }
@@ -387,7 +388,7 @@ model Reserva {
   data       DateTime
   horaInicio String        @map("hora_inicio")
   horaFim    String        @map("hora_fim")
-  status     StatusReserva @default(CONFIRMADA)
+  status     StatusReserva @default(PENDENTE)
   criadoEm   DateTime      @default(now()) @map("criado_em")
 
   predio  Predio     @relation(fields: [predioId], references: [id])

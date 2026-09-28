@@ -583,6 +583,141 @@ button:disabled {
   margin-top: 4px;
 }
 
+/* ---------- Calendario de reservas ---------- */
+
+.calendario-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.calendario-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendario-nav strong {
+  min-width: 140px;
+  text-align: center;
+  text-transform: capitalize;
+  font-size: 0.9rem;
+}
+
+.calendario-nav button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendario-grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.calendario-dia-semana {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
+.calendario-dia {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.calendario-dia-vazio {
+  border: none;
+  background: transparent;
+}
+
+.calendario-dia-livre:not(:disabled) {
+  cursor: pointer;
+}
+
+.calendario-dia-livre:not(:disabled):hover {
+  border-color: var(--primary);
+}
+
+.calendario-dia-passado {
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+.calendario-dia-pendente {
+  background: var(--accent-soft);
+  border-color: var(--warning);
+  color: var(--warning);
+  cursor: pointer;
+}
+
+.calendario-dia-ocupado {
+  background: color-mix(in srgb, var(--success) 16%, var(--surface-strong));
+  border-color: var(--success);
+  color: var(--success);
+  cursor: pointer;
+}
+
+.calendario-dia-hoje {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.calendario-dia-selecionado {
+  outline: 2px solid var(--foreground);
+  outline-offset: 1px;
+}
+
+.calendario-legenda {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.calendario-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendario-legenda-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.calendario-detalhe-dia {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 640px) {
   .areas-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

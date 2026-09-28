@@ -41,11 +41,11 @@ export class ReservasService {
 
     const data = new Date(dto.data);
     const conflitos = await this.prisma.reserva.findMany({
-      where: { areaId: dto.areaId, data, status: 'CONFIRMADA' },
+      where: { areaId: dto.areaId, data, status: { in: ['CONFIRMADA', 'PENDENTE'] } },
     });
     const sobrepoe = conflitos.some((r) => dto.horaInicio < r.horaFim && dto.horaFim > r.horaInicio);
     if (sobrepoe) {
-      throw new BadRequestException('Ja existe uma reserva confirmada nesse horario.');
+      throw new BadRequestException('Ja existe uma reserva confirmada ou pendente nesse horario.');
     }
 
     return this.prisma.reserva.create({
@@ -56,6 +56,7 @@ export class ReservasService {
         data,
         horaInicio: dto.horaInicio,
         horaFim: dto.horaFim,
+        status: 'PENDENTE',
       },
       include: { area: true },
     });
@@ -71,5 +72,26 @@ export class ReservasService {
     }
 
     return this.prisma.reserva.update({ where: { id }, data: { status: 'CANCELADA' } });
+  }
+
+  async aprovar(user: AuthUser, id: string) {
+    await this.buscarPendentePorId(user, id);
+    return this.prisma.reserva.update({ where: { id }, data: { status: 'CONFIRMADA' }, include: { area: true } });
+  }
+
+  async recusar(user: AuthUser, id: string) {
+    await this.buscarPendentePorId(user, id);
+    return this.prisma.reserva.update({ where: { id }, data: { status: 'CANCELADA' }, include: { area: true } });
+  }
+
+  private async buscarPendentePorId(user: AuthUser, id: string) {
+    const reserva = await this.prisma.reserva.findUnique({ where: { id } });
+    if (!reserva || !user.predioIds.includes(reserva.predioId)) {
+      throw new NotFoundException('Reserva nao encontrada.');
+    }
+    if (reserva.status !== 'PENDENTE') {
+      throw new BadRequestException('Esta reserva ja foi avaliada.');
+    }
+    return reserva;
   }
 }

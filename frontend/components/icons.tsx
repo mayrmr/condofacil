@@ -140,6 +140,9 @@ export const IconLogOut = (props: SVGProps<SVGSVGElement>) =>
 export const IconChevronLeft = (props: SVGProps<SVGSVGElement>) =>
   base(<path d="M15 18l-6-6 6-6" />, props);
 
+export const IconChevronRight = (props: SVGProps<SVGSVGElement>) =>
+  base(<path d="M9 18l6-6-6-6" />, props);
+
 export const IconCamera = (props: SVGProps<SVGSVGElement>) =>
   base(
     <>
