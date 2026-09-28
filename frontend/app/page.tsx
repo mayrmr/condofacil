@@ -20,6 +20,10 @@ const PERIODOS = [
 
 type Periodo = (typeof PERIODOS)[number]['valor'];
 
+function primeiroNome(nomeCompleto: string): string {
+  return nomeCompleto.trim().split(/\s+/)[0] ?? '';
+}
+
 function chaveDaReserva(iso: string): string {
   return iso.slice(0, 10);
 }
@@ -51,7 +55,7 @@ function InicioGestor() {
 
   return (
     <div className="stack">
-      <PageTopBar title="Visão geral">
+      <PageTopBar title="Visão geral" sino>
         <div className="tabs">
           {PERIODOS.map((p) => (
             <button key={p.valor} className={p.valor === periodo ? 'ativo' : ''} onClick={() => setPeriodo(p.valor)}>
@@ -102,6 +106,7 @@ function InicioGestor() {
 }
 
 function InicioUsuario() {
+  const { perfil } = useAuth();
   const [resumo, setResumo] = useState<{ encomendasPendentes: number; proximaReserva: Reserva | null } | null>(null);
 
   useEffect(() => {
@@ -110,7 +115,11 @@ function InicioUsuario() {
 
   return (
     <div className="stack">
-      <PageTopBar title="Início" />
+      <PageTopBar
+        title={`Olá, ${perfil ? primeiroNome(perfil.nomeCompleto) : ''}`}
+        subtitulo="Bem-vindo de volta"
+        sino
+      />
 
       <div className="resumo-grid">
         <div className="resumo-card">
@@ -220,6 +229,7 @@ function AvisosRecentes() {
 }
 
 function InicioFuncionario() {
+  const { perfil } = useAuth();
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [ocorrenciaAbertaId, setOcorrenciaAbertaId] = useState<string | null>(null);
@@ -237,7 +247,7 @@ function InicioFuncionario() {
 
   return (
     <div className="stack">
-      <PageTopBar title="Início" />
+      <PageTopBar title={`Olá, ${perfil ? primeiroNome(perfil.nomeCompleto) : ''}`} sino />
       <AcessoRapidoFuncionario />
       <AvisosRecentes />
 

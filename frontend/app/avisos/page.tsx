@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
-import { IconAlertCircle, IconBell } from '@/components/icons';
+import { IconAlertCircle, IconBell, IconSearch } from '@/components/icons';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { formatarData } from '@/lib/formatacao';
@@ -14,6 +14,13 @@ const CATEGORIAS_URGENTES = ['assembleia', 'urgente', 'seguranca'];
 
 function ehUrgente(categoria: string): boolean {
   return CATEGORIAS_URGENTES.some((c) => categoria.toLowerCase().includes(c));
+}
+
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
 }
 
 function grupoDoAviso(criadoEm: string): 'HOJE' | 'ESTA SEMANA' | 'ANTERIORES' {
@@ -140,6 +147,7 @@ function ListaAvisos() {
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [abertoId, setAbertoId] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
 
   async function carregar() {
     const dados = await api.get<Aviso[]>('/avisos');
@@ -152,8 +160,13 @@ function ListaAvisos() {
     carregar();
   }, []);
 
+  const termo = normalizar(busca);
+  const avisosFiltrados = termo
+    ? avisos.filter((a) => normalizar(a.titulo).includes(termo) || normalizar(a.descricao).includes(termo))
+    : avisos;
+
   const grupos: Record<string, Aviso[]> = { HOJE: [], 'ESTA SEMANA': [], ANTERIORES: [] };
-  for (const aviso of avisos) {
+  for (const aviso of avisosFiltrados) {
     grupos[grupoDoAviso(aviso.criadoEm)].push(aviso);
   }
 
@@ -166,8 +179,17 @@ function ListaAvisos() {
           </Link>
         )}
       </PageTopBar>
+      <div>
+        <label className="dashboard-busca">
+          <IconSearch />
+          <input placeholder="Buscar aviso..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </label>
+      </div>
       {carregando && <p className="muted">Carregando...</p>}
       {!carregando && avisos.length === 0 && <p className="muted">Nenhum aviso publicado ainda.</p>}
+      {!carregando && avisos.length > 0 && avisosFiltrados.length === 0 && (
+        <p className="muted">Nenhum aviso encontrado para essa busca.</p>
+      )}
       {(['HOJE', 'ESTA SEMANA', 'ANTERIORES'] as const)
         .filter((g) => grupos[g].length > 0)
         .map((g) => (

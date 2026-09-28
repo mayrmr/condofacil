@@ -436,6 +436,29 @@ h1 {
   flex-wrap: wrap;
 }
 
+.page-topbar-subtitulo {
+  margin-top: 2px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.page-topbar-sino {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.page-topbar-sino:hover {
+  transform: translateY(-1px);
+}
+
 /* ---------- Cards de resumo (inicio) ---------- */
 
 .resumo-grid {
