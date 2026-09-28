@@ -170,3 +170,23 @@ export const IconAlertCircle = (props: SVGProps<SVGSVGElement>) =>
 
 export const IconFilter = (props: SVGProps<SVGSVGElement>) =>
   base(<path d="M4 5h16l-6 7.5V19l-4 2v-8.5L4 5Z" />, props);
+
+export const IconSearch = (props: SVGProps<SVGSVGElement>) =>
+  base(
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </>,
+    props,
+  );
+
+export const IconList = (props: SVGProps<SVGSVGElement>) =>
+  base(
+    <>
+      <path d="M8 6h12M8 12h12M8 18h12" />
+      <path d="M4 6h.01M4 12h.01M4 18h.01" />
+    </>,
+    props,
+  );
+
+export const IconX = (props: SVGProps<SVGSVGElement>) => base(<path d="M6 6l12 12M18 6L6 18" />, props);
