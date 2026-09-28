@@ -25,36 +25,6 @@
   --shadow-card: 0 1px 2px rgba(22, 36, 29, 0.04);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #12180f;
-    --surface: #1c2620;
-    --surface-strong: #202b24;
-    --border: #2c3a32;
-    --foreground: #eef2ee;
-    --muted: #93a49a;
-    --primary: #5f9a83;
-    --primary-hover: #6fae95;
-    --primary-foreground: #0e1712;
-    --sidebar-bg: #0d1611;
-    --sidebar-fg: #eef2ee;
-    --sidebar-muted: #7d9186;
-    --sidebar-active: #1c2b22;
-    --accent: #e0a67e;
-    --accent-soft: #3a2e22;
-    --chip-bg: #263a2f;
-    --danger: #e08872;
-    --danger-soft: #3a2420;
-    --success: #6fae95;
-    --warning: #d99a5c;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
-  }
-
-  html {
-    color-scheme: dark;
-  }
-}
-
 html {
   height: 100%;
 }
