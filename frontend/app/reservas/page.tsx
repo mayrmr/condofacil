@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { FiltroDropdown } from '@/components/FiltroDropdown';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconChevronLeft, IconChevronRight, IconPlus } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
@@ -195,79 +196,97 @@ function CalendarioReservas({
     setMesRef((atual) => new Date(atual.getFullYear(), atual.getMonth() + delta, 1));
   }
 
+  const areaSelecionada = areas.find((a) => a.id === areaId);
+
   return (
     <div className="card">
       <h2>Calendário de reservas</h2>
-      <div className="calendario-topo">
-        <select value={areaId} onChange={(e) => { setAreaIdEscolhida(e.target.value); setDiaSelecionado(null); }}>
-          {areas.map((a) => (
-            <option key={a.id} value={a.id}>{a.nome}</option>
-          ))}
-        </select>
-        <div className="calendario-nav">
-          <button type="button" onClick={() => mudarMes(-1)} aria-label="Mês anterior">
-            <IconChevronLeft width={16} height={16} />
-          </button>
-          <strong>
-            {mesRef.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-          </strong>
-          <button type="button" onClick={() => mudarMes(1)} aria-label="Próximo mês">
-            <IconChevronRight width={16} height={16} />
-          </button>
-        </div>
-      </div>
-
-      <div className="calendario-grade">
-        {DIAS_SEMANA.map((d, i) => (
-          <div key={i} className="calendario-dia-semana">{d}</div>
-        ))}
-        {celulas.map((data, i) => {
-          if (!data) return <div key={`vazio-${i}`} className="calendario-dia calendario-dia-vazio" />;
-          const chave = chaveDiaLocal(data);
-          const reservasDoDia = reservasPorDia.get(chave) ?? [];
-          const ocupado = reservasDoDia.length > 0;
-          const pendente = reservasDoDia.some((r) => r.status === 'PENDENTE');
-          const passou = chave < hojeChave;
-          const clicavel = ocupado || (podeReservar && !passou);
-          return (
-            <button
-              key={chave}
-              type="button"
-              className={`calendario-dia${ocupado ? (pendente ? ' calendario-dia-pendente' : ' calendario-dia-ocupado') : ' calendario-dia-livre'}${chave === hojeChave ? ' calendario-dia-hoje' : ''}${chave === diaSelecionado ? ' calendario-dia-selecionado' : ''}${passou && !ocupado ? ' calendario-dia-passado' : ''}`}
-              disabled={!clicavel}
-              onClick={() => {
-                if (ocupado) {
-                  setDiaSelecionado((atual) => (atual === chave ? null : chave));
-                } else if (podeReservar) {
-                  aoEscolherData(areaId, chave);
-                }
+      <div className="calendario-split">
+        <div className="calendario-coluna-calendario">
+          <div className="calendario-topo">
+            <FiltroDropdown
+              label="Área"
+              valorSelecionado={areaId}
+              ativo={false}
+              opcoes={areas.map((a) => ({ valor: a.id, texto: a.nome }))}
+              aoSelecionar={(v) => {
+                setAreaIdEscolhida(v);
+                setDiaSelecionado(null);
               }}
-            >
-              {data.getDate()}
-            </button>
-          );
-        })}
-      </div>
+            />
+            <div className="calendario-nav">
+              <button type="button" onClick={() => mudarMes(-1)} aria-label="Mês anterior">
+                <IconChevronLeft width={14} height={14} />
+              </button>
+              <strong>{mesRef.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</strong>
+              <button type="button" onClick={() => mudarMes(1)} aria-label="Próximo mês">
+                <IconChevronRight width={14} height={14} />
+              </button>
+            </div>
+          </div>
 
-      <div className="calendario-legenda">
-        <span><i className="calendario-legenda-dot calendario-dia-livre" /> Livre</span>
-        <span><i className="calendario-legenda-dot calendario-dia-pendente" /> Pendente</span>
-        <span><i className="calendario-legenda-dot calendario-dia-ocupado" /> Confirmado</span>
-      </div>
-
-      {diaSelecionado && reservasDoDiaSelecionado.length > 0 && (
-        <div className="calendario-detalhe-dia">
-          <strong>{formatarChave(diaSelecionado)}</strong>
-          <div className="stack" style={{ marginTop: 8 }}>
-            {reservasDoDiaSelecionado.map((r) => (
-              <div key={r.id} className="row-between">
-                <span>{r.horaInicio} às {r.horaFim}</span>
-                <span className={`badge ${BADGE_STATUS_RESERVA[r.status]}`}>{LABEL_STATUS_RESERVA[r.status]}</span>
-              </div>
+          <div className="calendario-grade">
+            {DIAS_SEMANA.map((d, i) => (
+              <div key={i} className="calendario-dia-semana">{d}</div>
             ))}
+            {celulas.map((data, i) => {
+              if (!data) return <div key={`vazio-${i}`} className="calendario-dia calendario-dia-vazio" />;
+              const chave = chaveDiaLocal(data);
+              const reservasDoDia = reservasPorDia.get(chave) ?? [];
+              const ocupado = reservasDoDia.length > 0;
+              const pendente = reservasDoDia.some((r) => r.status === 'PENDENTE');
+              const passou = chave < hojeChave;
+              const clicavel = ocupado || (podeReservar && !passou);
+              return (
+                <button
+                  key={chave}
+                  type="button"
+                  className={`calendario-dia${ocupado ? (pendente ? ' calendario-dia-pendente' : ' calendario-dia-ocupado') : ' calendario-dia-livre'}${chave === hojeChave ? ' calendario-dia-hoje' : ''}${chave === diaSelecionado ? ' calendario-dia-selecionado' : ''}${passou && !ocupado ? ' calendario-dia-passado' : ''}`}
+                  disabled={!clicavel}
+                  onClick={() => {
+                    if (ocupado) {
+                      setDiaSelecionado((atual) => (atual === chave ? null : chave));
+                    } else if (podeReservar) {
+                      aoEscolherData(areaId, chave);
+                    }
+                  }}
+                >
+                  {data.getDate()}
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
+
+        <div className="calendario-coluna-detalhe">
+          <strong>{areaSelecionada?.nome}</strong>
+          <div className="calendario-legenda">
+            <span><i className="calendario-legenda-dot calendario-dia-livre" /> Livre</span>
+            <span><i className="calendario-legenda-dot calendario-dia-pendente" /> Pendente</span>
+            <span><i className="calendario-legenda-dot calendario-dia-ocupado" /> Confirmado</span>
+          </div>
+
+          {diaSelecionado && reservasDoDiaSelecionado.length > 0 ? (
+            <div className="calendario-detalhe-dia">
+              <strong>{formatarChave(diaSelecionado)}</strong>
+              <div className="stack" style={{ marginTop: 8 }}>
+                {reservasDoDiaSelecionado.map((r) => (
+                  <div key={r.id} className="row-between">
+                    <span>{r.horaInicio} às {r.horaFim}</span>
+                    <span className={`badge ${BADGE_STATUS_RESERVA[r.status]}`}>{LABEL_STATUS_RESERVA[r.status]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="muted" style={{ marginTop: 14 }}>
+              {podeReservar
+                ? 'Clique num dia livre para reservar, ou num dia ocupado para ver os horários.'
+                : 'Clique num dia ocupado para ver os horários reservados.'}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

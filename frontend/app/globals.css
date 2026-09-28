@@ -604,26 +604,44 @@ button:disabled {
 
 /* ---------- Calendario de reservas ---------- */
 
+.calendario-split {
+  display: flex;
+  gap: 28px;
+  margin-top: 12px;
+  align-items: flex-start;
+}
+
+.calendario-coluna-calendario {
+  flex: 0 0 300px;
+  max-width: 300px;
+}
+
+.calendario-coluna-detalhe {
+  flex: 1;
+  min-width: 200px;
+  padding-top: 4px;
+}
+
 .calendario-topo {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
 .calendario-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .calendario-nav strong {
-  min-width: 140px;
+  min-width: 84px;
   text-align: center;
   text-transform: capitalize;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .calendario-nav button {
@@ -804,6 +822,15 @@ button:disabled {
 
   .reserva-destaque {
     flex-wrap: wrap;
+  }
+
+  .calendario-split {
+    flex-direction: column;
+  }
+
+  .calendario-coluna-calendario {
+    flex: 1 1 auto;
+    max-width: none;
   }
 }
 

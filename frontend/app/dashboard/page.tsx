@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FiltroDropdown } from '@/components/FiltroDropdown';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { OcorrenciaModal } from '@/components/OcorrenciaModal';
 import { RequireAuth } from '@/components/RequireAuth';
-import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch, IconX } from '@/components/icons';
+import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { COR_STATUS, LABEL_CATEGORIA, LABEL_STATUS, tempoRelativo } from '@/lib/formatacao';
@@ -162,90 +163,6 @@ function ColunaKanban({
           aoAbrir={aoAbrir}
         />
       ))}
-    </div>
-  );
-}
-
-interface OpcaoFiltro {
-  valor: string;
-  texto: string;
-}
-
-function FiltroDropdown({
-  label,
-  valorSelecionado,
-  ativo,
-  opcoes,
-  aoSelecionar,
-  aoLimpar,
-}: {
-  label: string;
-  valorSelecionado: string;
-  ativo: boolean;
-  opcoes: OpcaoFiltro[];
-  aoSelecionar: (v: string) => void;
-  aoLimpar: () => void;
-}) {
-  const [aberto, setAberto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!aberto) return;
-    function aoClicarFora(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setAberto(false);
-    }
-    document.addEventListener('mousedown', aoClicarFora);
-    return () => document.removeEventListener('mousedown', aoClicarFora);
-  }, [aberto]);
-
-  return (
-    <div className="filtro-dropdown" ref={ref}>
-      <button
-        type="button"
-        className={`filtro-dropdown-toggle${ativo ? ' ativo' : ''}`}
-        onClick={() => setAberto((a) => !a)}
-      >
-        {label}
-        {ativo && (
-          <span
-            className="filtro-limpar-um"
-            role="button"
-            tabIndex={0}
-            aria-label={`Limpar filtro de ${label}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              aoLimpar();
-              setAberto(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation();
-                aoLimpar();
-                setAberto(false);
-              }
-            }}
-          >
-            <IconX />
-          </span>
-        )}
-      </button>
-      {aberto && (
-        <div className="filtro-dropdown-menu">
-          {opcoes.map((o) => (
-            <button
-              key={o.valor}
-              type="button"
-              className={`filtro-opcao${o.valor === valorSelecionado ? ' selecionada' : ''}`}
-              onClick={() => {
-                aoSelecionar(o.valor);
-                setAberto(false);
-              }}
-            >
-              {o.texto}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
