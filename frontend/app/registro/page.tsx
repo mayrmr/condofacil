@@ -1,10 +1,22 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { supabase } from '@/lib/supabase-client';
+import type { TipoVinculo } from '@/lib/types';
+
+interface ApartamentoPublico {
+  id: string;
+  numero: string;
+}
+
+interface BlocoPublico {
+  id: string;
+  nome: string;
+  apartamentos: ApartamentoPublico[];
+}
 
 function FormularioRegistro() {
   const router = useRouter();
@@ -14,12 +26,34 @@ function FormularioRegistro() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [predioId, setPredioId] = useState(searchParams.get('predioId') ?? '');
-  const [apartamentoId, setApartamentoId] = useState(searchParams.get('apartamentoId') ?? '');
+  const [blocos, setBlocos] = useState<BlocoPublico[]>([]);
+  const [blocoId, setBlocoId] = useState('');
+  const [apartamentoId, setApartamentoId] = useState('');
+  const [tipoVinculo, setTipoVinculo] = useState<TipoVinculo>('PROPRIETARIO');
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   const nomePredio = searchParams.get('nomePredio');
   const predioPreenchido = Boolean(nomePredio && predioId);
+
+  useEffect(() => {
+    if (!predioId) return;
+    let cancelado = false;
+    api
+      .get<BlocoPublico[]>(`/predios/${predioId}/estrutura-publica`)
+      .then((dados) => {
+        if (!cancelado) setBlocos(dados);
+      })
+      .catch(() => {
+        if (!cancelado) setBlocos([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [predioId]);
+
+  const blocosVisiveis = predioId ? blocos : [];
+  const blocoSelecionado = blocosVisiveis.find((b) => b.id === blocoId);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -31,7 +65,8 @@ function FormularioRegistro() {
         email,
         senha,
         predioId,
-        ...(apartamentoId ? { apartamentoId } : {}),
+        apartamentoId,
+        tipoVinculo,
       });
 
       const sessao = await api.post<{ accessToken: string; refreshToken: string }>('/auth/login', {
@@ -88,14 +123,60 @@ function FormularioRegistro() {
             id="predioId"
             required
             value={predioId}
-            onChange={(e) => setPredioId(e.target.value)}
+            onChange={(e) => {
+              setPredioId(e.target.value);
+              setBlocoId('');
+              setApartamentoId('');
+            }}
             placeholder="Informado pelo síndico/gestor do seu condomínio"
           />
         </div>
       )}
+      <div className="row">
+        <div className="field" style={{ flex: 1 }}>
+          <label htmlFor="blocoId">Bloco</label>
+          <select
+            id="blocoId"
+            required
+            value={blocoId}
+            onChange={(e) => {
+              setBlocoId(e.target.value);
+              setApartamentoId('');
+            }}
+            disabled={blocosVisiveis.length === 0}
+          >
+            <option value="">{blocosVisiveis.length === 0 ? 'Informe o prédio primeiro' : 'Selecione...'}</option>
+            {blocosVisiveis.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field" style={{ flex: 1 }}>
+          <label htmlFor="apartamentoId">Apartamento</label>
+          <select
+            id="apartamentoId"
+            required
+            value={apartamentoId}
+            onChange={(e) => setApartamentoId(e.target.value)}
+            disabled={!blocoSelecionado}
+          >
+            <option value="">Selecione...</option>
+            {blocoSelecionado?.apartamentos.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.numero}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
       <div className="field">
-        <label htmlFor="apartamentoId">ID do apartamento (opcional)</label>
-        <input id="apartamentoId" value={apartamentoId} onChange={(e) => setApartamentoId(e.target.value)} />
+        <label htmlFor="tipoVinculo">Você é</label>
+        <select id="tipoVinculo" value={tipoVinculo} onChange={(e) => setTipoVinculo(e.target.value as TipoVinculo)}>
+          <option value="PROPRIETARIO">Proprietário</option>
+          <option value="INQUILINO">Inquilino</option>
+        </select>
       </div>
       {erro && <p className="erro">{erro}</p>}
       <button type="submit" className="btn-primary" disabled={enviando} style={{ width: '100%' }}>

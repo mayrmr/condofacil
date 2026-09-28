@@ -31,6 +31,14 @@ export class AuthService {
       throw new NotFoundException('Predio nao encontrado.');
     }
 
+    const apartamento = await this.prisma.apartamento.findUnique({
+      where: { id: dto.apartamentoId },
+      include: { bloco: true },
+    });
+    if (!apartamento || apartamento.bloco.predioId !== dto.predioId) {
+      throw new BadRequestException('Apartamento nao pertence a este predio.');
+    }
+
     const { data, error } = await this.supabase.admin.auth.admin.createUser({
       email: dto.email,
       password: dto.senha,
@@ -46,6 +54,7 @@ export class AuthService {
           authUserId: data.user.id,
           predioId: dto.predioId,
           apartamentoId: dto.apartamentoId,
+          tipoVinculo: dto.tipoVinculo,
           nomeCompleto: dto.nomeCompleto,
           email: dto.email,
         },

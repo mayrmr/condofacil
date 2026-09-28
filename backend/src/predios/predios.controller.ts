@@ -23,6 +23,14 @@ export class PrediosController {
     return this.prediosService.buscarPorCodigoConvite(codigo);
   }
 
+  // Publico: so blocos/apartamentos (id/nome/numero), pra popular os
+  // selects em cascata da tela de cadastro, antes do morador ter login.
+  @Public()
+  @Get(':id/estrutura-publica')
+  estruturaPublica(@Param('id') id: string) {
+    return this.prediosService.estruturaPublica(id);
+  }
+
   @Get(':id')
   buscarPorId(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.prediosService.buscarPorId(user, id);

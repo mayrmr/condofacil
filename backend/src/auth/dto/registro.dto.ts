@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsString, IsUUID, MinLength } from 'class-validator';
+import { TipoVinculo } from '../../generated/prisma/enums.js';
 
 export class RegistroDto {
   @IsString()
@@ -15,7 +16,9 @@ export class RegistroDto {
   @IsUUID()
   predioId!: string;
 
-  @IsOptional()
   @IsUUID()
-  apartamentoId?: string;
+  apartamentoId!: string;
+
+  @IsIn(Object.values(TipoVinculo))
+  tipoVinculo!: TipoVinculo;
 }

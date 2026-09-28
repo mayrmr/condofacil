@@ -44,6 +44,18 @@ export class PrediosService {
     return predio;
   }
 
+  async estruturaPublica(predioId: string) {
+    const predio = await this.prisma.predio.findUnique({ where: { id: predioId } });
+    if (!predio) {
+      throw new NotFoundException('Predio nao encontrado.');
+    }
+    return this.prisma.bloco.findMany({
+      where: { predioId },
+      select: { id: true, nome: true, apartamentos: { select: { id: true, numero: true } } },
+      orderBy: { nome: 'asc' },
+    });
+  }
+
   async blocos(user: AuthUser, predioId: string) {
     this.verificarAcesso(user, predioId);
     return this.prisma.bloco.findMany({
