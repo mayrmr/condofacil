@@ -53,6 +53,8 @@ Abertura
    │
    ├──► Excluir (usuário, apenas antes de análise)
    │
+   ├──► Cancelamento (gestor) ──► Avaliação
+   │
    ▼
 Análise (gestor)
    │
@@ -146,11 +148,11 @@ GET    /usuarios/me
 PATCH  /usuarios/me
 GET    /gestor/usuarios                 (gestor)
 GET    /gestor/funcionarios             (gestor)
-GET    /gestor/dashboard?view=kanban|calendario|lista|prioridades|funcionarios|areas
-GET    /funcionario/dashboard?view=kanban|calendario|lista|prioridades
+GET    /gestor/dashboard?view=kanban|calendario|lista&q=&categoria=&blocoId=&responsavelFuncionarioId=&prioridade=&status=&periodoDias=
+GET    /funcionario/dashboard?view=kanban|calendario|lista&(mesmos filtros acima)
 ```
 
-Regra fixa: todas as rotas de listagem derivam o filtro de `predio_id` do usuário autenticado (`request.user`, resolvido pelo `SupabaseAuthGuard`) — nunca de parâmetro de query.
+Regra fixa: todas as rotas de listagem derivam o filtro de `predio_id` do usuário autenticado (`request.user`, resolvido pelo `SupabaseAuthGuard`) — nunca de parâmetro de query. Os demais filtros (`categoria`, `blocoId`, `responsavelFuncionarioId`, `prioridade`, `status`, `periodoDias`) são opcionais e combináveis; o modo `kanban` sempre agrupa por `statusAtual`, com uma coluna fixa por etapa do fluxo (mesmo vazia), independente dos filtros aplicados.
 
 Decisões tomadas ao implementar (onde a especificação original era ambígua ou o modelo de dados do ER diagram divergia da matriz de permissões):
 - Só **Usuário** cria ocorrências (`Ocorrencia.criadoPorUsuarioId` só referencia `Usuario`, conforme o ER diagram da seção anterior); Funcionário/Gestor acompanham e atuam, mas não abrem em nome próprio.
@@ -168,7 +170,7 @@ Decisões tomadas ao implementar (onde a especificação original era ambígua o
 /ocorrencias/nova, /ocorrencias/[id] usuário cria; todos os perfis acompanham/atuam em [id]
 /avisos                              todos veem/comentam; gestor cria/encerra
 /area-usuario                        editar o próprio perfil
-/dashboard                           funcionário (4 modos) e gestor (6 modos)
+/dashboard                           ocorrências de funcionário/gestor — kanban (arrastar e soltar), calendário e lista, com busca e filtros
 /predio/estrutura                    gestor — cadastra blocos, apartamentos e áreas sociais
 /gestor/convidar                     gestor — gera link de convite para funcionário/gestor
 ```
@@ -187,7 +189,7 @@ Decisões tomadas ao implementar (onde a especificação original era ambígua o
 
 ## Testes
 
-- **Unitários** (`backend/src/ocorrencias/state-machine/*.spec.ts`): todas as transições permitidas/negadas por perfil da máquina de estados — 18 casos.
+- **Unitários** (`backend/src/ocorrencias/state-machine/*.spec.ts`): todas as transições permitidas/negadas por perfil da máquina de estados — 19 casos.
 - **E2E** (`backend/test/ocorrencias-fluxo-completo.e2e-spec.ts`): fluxo completo abertura → análise → atendimento → resolução → avaliação para os três perfis, incluindo negações de permissão e isolamento entre prédios — via um Prisma fake em memória (não depende de banco real).
 - **Integração de RLS** (`backend/test/rls-isolamento.e2e-spec.ts`): teste real contra Postgres, habilitado só com `TEST_DATABASE_URL` definida (pulado neste ambiente, que não tem um Supabase provisionado) — roda depois de aplicar `rls.sql` num banco de teste.
 

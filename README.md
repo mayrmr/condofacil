@@ -50,8 +50,8 @@ Todo o roteiro de desenvolvimento (seção abaixo) está concluído.
 - **Auth completo**: auto-cadastro de usuário, login (proxy para Supabase Auth), convite de funcionário/gestor por token com expiração, aceite de convite, e cadastro inicial de empresa+prédio+primeiro gestor. Validado de ponta a ponta contra o Supabase real (cadastro → login → JWT → perfil).
 - **Upload de imagens**: fluxo de signed URL (solicitar upload → cliente envia direto ao Storage → confirmação), com validação de tipo/tamanho no backend. Bucket `ocorrencias` (privado) já criado no Storage.
 - **RLS**: policies aplicadas e testadas em [`backend/prisma/sql/rls.sql`](backend/prisma/sql/rls.sql) — isolam ocorrências/avisos/usuários/comentários/imagens por `predio_id`, e são o que protege o canal Realtime (o frontend assina mudanças direto no Postgres via Supabase, sem passar pelo backend). Inclui os `GRANT`s necessários para o role `authenticated` (tabelas criadas via Prisma Migrate não ganham isso automaticamente, ao contrário das criadas pelo editor do Supabase).
-- **Testes**: 18 unitários da máquina de estados, 16 e2e do fluxo completo abertura → análise → atendimento → resolução → avaliação (três perfis, via fakes em memória), 1 integração real de RLS — **executado contra o projeto Supabase real**, não só simulado.
-- **Frontend (Next.js)**: login, criar conta, feed principal (ocorrências + avisos), minhas ocorrências, nova ocorrência, detalhe da ocorrência (mudar status, prioridade, responsável, comentar, anexar imagem, avaliar), avisos (criar/comentar/encerrar), área do usuário, dashboard de funcionário (4 modos) e gestor (6 modos).
+- **Testes**: backend com 19 unitários da máquina de estados, 16 e2e do fluxo completo abertura → análise → atendimento → resolução → avaliação (três perfis, via fakes em memória), 1 integração real de RLS — **executado contra o projeto Supabase real**, não só simulado. Frontend com Vitest + React Testing Library.
+- **Frontend (Next.js)**: login, criar conta, feed principal (ocorrências + avisos), minhas ocorrências, nova ocorrência, detalhe da ocorrência (mudar status, prioridade, responsável, comentar, anexar imagem, avaliar), avisos (criar/comentar/encerrar), área do usuário, dashboard de ocorrências em kanban (arrastar e soltar entre etapas), calendário e lista, com busca e filtros (status, prioridade, categoria, bloco, responsável, período).
 
 ### Deploy
 
@@ -98,6 +98,15 @@ Para rodar a integração real de RLS contra o Supabase provisionado (recomendad
 
 ```bash
 TEST_DATABASE_URL="$DATABASE_URL" npm run test:e2e
+```
+
+### Testes (frontend)
+
+Vitest + React Testing Library, cobrindo as funções puras mais sensíveis (máquina de estados espelhada, formatação/rótulos de status, filtragem de navegação por perfil) e a renderização do card de ocorrência.
+
+```bash
+cd frontend
+npm test
 ```
 
 ## Roteiro de desenvolvimento
