@@ -28,12 +28,8 @@ export class OcorrenciasController {
   constructor(private readonly ocorrenciasService: OcorrenciasService) {}
 
   @Get()
-  listar(
-    @CurrentUser() user: AuthUser,
-    @Query() query: ListarOcorrenciasQueryDto,
-    @Query('minhas') minhas?: string,
-  ) {
-    return this.ocorrenciasService.listar(user, query, minhas === 'true');
+  listar(@CurrentUser() user: AuthUser, @Query() query: ListarOcorrenciasQueryDto) {
+    return this.ocorrenciasService.listar(user, query, query.minhas === 'true');
   }
 
   @Get(':id')

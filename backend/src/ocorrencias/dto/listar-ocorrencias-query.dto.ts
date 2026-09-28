@@ -23,4 +23,8 @@ export class ListarOcorrenciasQueryDto {
   @IsOptional()
   @IsEnum(StatusOcorrencia)
   status?: StatusOcorrencia;
+
+  @IsOptional()
+  @IsString()
+  minhas?: string;
 }

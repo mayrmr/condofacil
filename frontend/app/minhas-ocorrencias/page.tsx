@@ -10,11 +10,13 @@ import type { Ocorrencia } from '@/lib/types';
 function ListaMinhasOcorrencias() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     api
       .get<Ocorrencia[]>('/ocorrencias?minhas=true')
       .then(setOcorrencias)
+      .catch(() => setErro('Não foi possível carregar suas ocorrências.'))
       .finally(() => setCarregando(false));
   }, []);
 
@@ -27,7 +29,8 @@ function ListaMinhasOcorrencias() {
         </Link>
       </div>
       {carregando && <p className="muted">Carregando...</p>}
-      {!carregando && ocorrencias.length === 0 && (
+      {erro && <p className="erro">{erro}</p>}
+      {!carregando && !erro && ocorrencias.length === 0 && (
         <p className="muted">Você ainda não abriu nenhuma ocorrência.</p>
       )}
       <div className="stack">
