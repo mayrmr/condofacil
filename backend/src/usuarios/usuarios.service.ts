@@ -61,7 +61,7 @@ export class UsuariosService {
       case Role.USUARIO: {
         const usuario = await this.prisma.usuario.findUniqueOrThrow({
           where: { id: user.perfilId },
-          include: { predio: true, apartamento: true },
+          include: { predio: true, apartamento: { include: { bloco: true } } },
         });
         return { ...usuario, role: Role.USUARIO };
       }

@@ -1,14 +1,14 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
-import { ITENS_BOTTOM_NAV, iniciais, itensParaPerfil } from '@/components/Sidebar';
-import { IconChevronLeft, IconLogOut, IconUser } from '@/components/icons';
+import { iniciais } from '@/components/Sidebar';
+import { IconLogOut } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import type { PerfilFuncionarioOuGestor, PerfilUsuario } from '@/lib/types';
+import type { PerfilFuncionarioOuGestor, PerfilUsuario, TipoVinculo } from '@/lib/types';
 
 const LABEL_PERFIL: Record<string, string> = {
   USUARIO: 'Morador',
@@ -16,10 +16,18 @@ const LABEL_PERFIL: Record<string, string> = {
   GESTOR: 'Gestor',
 };
 
-function FormularioMeusDados() {
+const LABEL_VINCULO: Record<TipoVinculo, string> = {
+  PROPRIETARIO: 'Proprietário',
+  INQUILINO: 'Inquilino',
+};
+
+function FormularioPerfil() {
   const { perfil, recarregarPerfil } = useAuth();
+  const usuario = perfil as PerfilUsuario;
+
   const [nomeCompleto, setNomeCompleto] = useState(perfil?.nomeCompleto ?? '');
   const [telefone, setTelefone] = useState(perfil?.telefone ?? '');
+  const [tipoVinculo, setTipoVinculo] = useState<TipoVinculo>(usuario.tipoVinculo ?? 'PROPRIETARIO');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
@@ -30,7 +38,11 @@ function FormularioMeusDados() {
     setErro(null);
     setSucesso(false);
     try {
-      await api.patch('/usuarios/me', { nomeCompleto, telefone });
+      await api.patch('/usuarios/me', {
+        nomeCompleto,
+        telefone,
+        ...(perfil?.role === 'USUARIO' ? { tipoVinculo } : {}),
+      });
       await recarregarPerfil();
       setSucesso(true);
     } catch (err) {
@@ -48,9 +60,40 @@ function FormularioMeusDados() {
         <input id="nomeCompleto" value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} />
       </div>
       <div className="field">
+        <label htmlFor="email">E-mail</label>
+        <input id="email" value={perfil?.email ?? ''} disabled />
+      </div>
+      <div className="field">
         <label htmlFor="telefone">Telefone</label>
         <input id="telefone" value={telefone ?? ''} onChange={(e) => setTelefone(e.target.value)} />
       </div>
+
+      {perfil?.role === 'USUARIO' && (
+        <>
+          <div className="field">
+            <label htmlFor="tipoVinculo">Você é</label>
+            <select
+              id="tipoVinculo"
+              value={tipoVinculo}
+              onChange={(e) => setTipoVinculo(e.target.value as TipoVinculo)}
+            >
+              <option value="PROPRIETARIO">Proprietário</option>
+              <option value="INQUILINO">Inquilino</option>
+            </select>
+          </div>
+          <div className="row">
+            <div className="field" style={{ flex: 1 }}>
+              <label>Bloco</label>
+              <input value={usuario.apartamento?.bloco?.nome ?? '—'} disabled />
+            </div>
+            <div className="field" style={{ flex: 1 }}>
+              <label>Apartamento</label>
+              <input value={usuario.apartamento?.numero ?? '—'} disabled />
+            </div>
+          </div>
+        </>
+      )}
+
       {erro && <p className="erro">{erro}</p>}
       {sucesso && <p style={{ color: 'var(--success)' }}>Dados atualizados.</p>}
       <button type="submit" className="btn-primary" disabled={salvando}>
@@ -63,7 +106,6 @@ function FormularioMeusDados() {
 function ConteudoAreaUsuario() {
   const { perfil, sair } = useAuth();
   const router = useRouter();
-  const [editando, setEditando] = useState(false);
 
   async function handleSair() {
     await sair();
@@ -77,13 +119,9 @@ function ConteudoAreaUsuario() {
       ? (perfil as PerfilUsuario).predio?.nome
       : (perfil as PerfilFuncionarioOuGestor).predios?.map((p) => p.predio.nome).join(', ');
 
-  const todos = itensParaPerfil(perfil.role);
-  const hrefsNaBarra = new Set(perfil.role ? ITENS_BOTTOM_NAV[perfil.role] : []);
-  const extras = todos.filter((item) => !hrefsNaBarra.has(item.href) && item.href !== '/area-usuario');
-
   return (
     <div className="stack">
-      <h1>Perfil</h1>
+      <PageTopBar title="Área do usuário" />
 
       <div className="card row" style={{ gap: 14 }}>
         <span className="avatar" style={{ width: 48, height: 48, fontSize: '1.1rem' }}>
@@ -93,74 +131,21 @@ function ConteudoAreaUsuario() {
           <strong style={{ display: 'block' }}>{perfil.nomeCompleto}</strong>
           <span className="muted">
             {unidade ? `${unidade} · ` : ''}
+            {perfil.role === 'USUARIO' && (perfil as PerfilUsuario).tipoVinculo
+              ? `${LABEL_VINCULO[(perfil as PerfilUsuario).tipoVinculo]} · `
+              : ''}
             {LABEL_PERFIL[perfil.role ?? ''] ?? perfil.role}
           </span>
         </div>
       </div>
 
-      {extras.length > 0 && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <p className="muted" style={{ padding: '14px 16px 4px', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.03em' }}>
-            Navegação
-          </p>
-          {extras.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row-between"
-                style={{ padding: '14px 16px', borderTop: '1px solid var(--border)' }}
-              >
-                <span className="row" style={{ gap: 10 }}>
-                  <Icon style={{ width: 18, height: 18 }} />
-                  {item.label}
-                </span>
-                <IconChevronLeft style={{ width: 16, height: 16, transform: 'rotate(180deg)', opacity: 0.5 }} />
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <FormularioPerfil />
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <p className="muted" style={{ padding: '14px 16px 4px', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.03em' }}>
-          Minha conta
-        </p>
-        <button
-          onClick={() => setEditando((v) => !v)}
-          className="row-between"
-          style={{
-            width: '100%',
-            padding: '14px 16px',
-            borderTop: '1px solid var(--border)',
-            borderLeft: 0,
-            borderRight: 0,
-            borderBottom: 0,
-            borderRadius: 0,
-            background: 'transparent',
-            fontWeight: 400,
-          }}
-        >
-          <span className="row" style={{ gap: 10 }}>
-            <IconUser style={{ width: 18, height: 18 }} />
-            Meus dados
-          </span>
-          <IconChevronLeft
-            style={{
-              width: 16,
-              height: 16,
-              opacity: 0.5,
-              transform: editando ? 'rotate(90deg)' : 'rotate(-90deg)',
-              transition: 'transform 0.15s ease',
-            }}
-          />
-        </button>
-      </div>
-
-      {editando && <FormularioMeusDados />}
-
-      <button className="btn-danger" onClick={handleSair} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      <button
+        className="btn-danger"
+        onClick={handleSair}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+      >
         <IconLogOut style={{ width: 16, height: 16 }} />
         Sair da conta
       </button>

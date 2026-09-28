@@ -193,3 +193,6 @@ export const IconList = (props: SVGProps<SVGSVGElement>) =>
   );
 
 export const IconX = (props: SVGProps<SVGSVGElement>) => base(<path d="M6 6l12 12M18 6L6 18" />, props);
+
+export const IconMenu = (props: SVGProps<SVGSVGElement>) =>
+  base(<path d="M4 7h16M4 12h16M4 17h16" />, props);

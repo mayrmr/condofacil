@@ -280,11 +280,10 @@ function CalendarioReservas({
               </div>
             </div>
           ) : (
-            <p className="muted" style={{ marginTop: 14 }}>
-              {podeReservar
-                ? 'Clique num dia livre para reservar, ou num dia ocupado para ver os horários.'
-                : 'Clique num dia ocupado para ver os horários reservados.'}
-            </p>
+            <div className="calendario-dica" style={{ marginTop: 14 }}>
+              {podeReservar && <p>Clique num dia livre para reservar.</p>}
+              <p className="muted">Dias ocupados mostram os horários ao clicar.</p>
+            </div>
           )}
         </div>
       </div>
@@ -410,82 +409,86 @@ function ConteudoReservas() {
         </div>
       )}
 
-      <div>
-        <h2>Áreas comuns</h2>
-        <div className="areas-grid">
-          {areas.map((a, i) => {
-            const clicavel = ehUsuario && a.ativa;
-            return (
-              <div
-                key={a.id}
-                className={`area-card${a.ativa ? '' : ' area-card-indisponivel'}${clicavel ? ' area-card-clicavel' : ''}`}
-                role={clicavel ? 'button' : undefined}
-                tabIndex={clicavel ? 0 : undefined}
-                onClick={clicavel ? () => abrirFormParaArea(a.id) : undefined}
-                onKeyDown={
-                  clicavel
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') abrirFormParaArea(a.id);
-                      }
-                    : undefined
-                }
-              >
+      <div className="reservas-split">
+        <div className="reservas-split-areas">
+          <h2>Áreas comuns</h2>
+          <div className="areas-grid">
+            {areas.map((a, i) => {
+              const clicavel = ehUsuario && a.ativa;
+              return (
                 <div
-                  className="area-card-banner"
-                  style={{
-                    background: a.fotoUrl
-                      ? `url(${a.fotoUrl}) center/cover`
-                      : GRADIENTES_AREA[i % GRADIENTES_AREA.length],
-                  }}
-                />
-                <div className="area-card-body">
-                  <div className="area-card-nome">{a.nome}</div>
-                  <div className="area-card-status">
-                    {a.ativa ? a.descricao || 'Disponível para reserva' : 'Indisponível'}
+                  key={a.id}
+                  className={`area-card${a.ativa ? '' : ' area-card-indisponivel'}${clicavel ? ' area-card-clicavel' : ''}`}
+                  role={clicavel ? 'button' : undefined}
+                  tabIndex={clicavel ? 0 : undefined}
+                  onClick={clicavel ? () => abrirFormParaArea(a.id) : undefined}
+                  onKeyDown={
+                    clicavel
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') abrirFormParaArea(a.id);
+                        }
+                      : undefined
+                  }
+                >
+                  <div
+                    className="area-card-banner"
+                    style={{
+                      background: a.fotoUrl
+                        ? `url(${a.fotoUrl}) center/cover`
+                        : GRADIENTES_AREA[i % GRADIENTES_AREA.length],
+                    }}
+                  />
+                  <div className="area-card-body">
+                    <div className="area-card-nome">{a.nome}</div>
+                    <div className="area-card-status">
+                      {a.ativa ? a.descricao || 'Disponível para reserva' : 'Indisponível'}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          {areas.length === 0 && <p className="muted">Nenhuma área cadastrada ainda.</p>}
+              );
+            })}
+            {areas.length === 0 && <p className="muted">Nenhuma área cadastrada ainda.</p>}
+          </div>
+          {perfil?.role === 'GESTOR' && (
+            <p className="muted" style={{ marginTop: 12 }}>
+              Para cadastrar ou editar áreas, use a{' '}
+              <Link href="/predio/estrutura" style={{ textDecoration: 'underline' }}>
+                Estrutura do prédio
+              </Link>
+              .
+            </p>
+          )}
+
+          {ehUsuario && mostrarForm && (
+            <div ref={formRef} style={{ marginTop: 16 }}>
+              <NovaReservaForm
+                areas={areas}
+                areaId={areaId}
+                setAreaId={setAreaId}
+                data={dataForm}
+                setData={setDataForm}
+                aoCriar={() => {
+                  carregar();
+                  setMostrarForm(false);
+                  setAreaId('');
+                  setDataForm('');
+                }}
+              />
+            </div>
+          )}
         </div>
-        {perfil?.role === 'GESTOR' && (
-          <p className="muted" style={{ marginTop: 12 }}>
-            Para cadastrar ou editar áreas, use a{' '}
-            <Link href="/predio/estrutura" style={{ textDecoration: 'underline' }}>
-              Estrutura do prédio
-            </Link>
-            .
-          </p>
+
+        {areas.length > 0 && (
+          <div className="reservas-split-calendario">
+            <CalendarioReservas
+              areas={areas}
+              reservas={reservas}
+              podeReservar={ehUsuario}
+              aoEscolherData={(id, data) => abrirFormParaArea(id, data)}
+            />
+          </div>
         )}
       </div>
-
-      {ehUsuario && mostrarForm && (
-        <div ref={formRef}>
-          <NovaReservaForm
-            areas={areas}
-            areaId={areaId}
-            setAreaId={setAreaId}
-            data={dataForm}
-            setData={setDataForm}
-            aoCriar={() => {
-              carregar();
-              setMostrarForm(false);
-              setAreaId('');
-              setDataForm('');
-            }}
-          />
-        </div>
-      )}
-
-      {areas.length > 0 && (
-        <CalendarioReservas
-          areas={areas}
-          reservas={reservas}
-          podeReservar={ehUsuario}
-          aoEscolherData={(id, data) => abrirFormParaArea(id, data)}
-        />
-      )}
 
       <div className="card">
         <h2>{ehUsuario ? 'Minhas reservas' : 'Todas as reservas'}</h2>

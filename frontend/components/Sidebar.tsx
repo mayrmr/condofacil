@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import type { SVGProps } from 'react';
+import { useState, type SVGProps } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import type { Role } from '@/lib/types';
 import {
@@ -13,10 +13,12 @@ import {
   IconGrid,
   IconHome,
   IconLogOut,
+  IconMenu,
   IconPackage,
   IconUser,
   IconUserPlus,
   IconUsers,
+  IconX,
 } from './icons';
 
 interface NavItem {
@@ -62,6 +64,7 @@ export function Sidebar() {
   const { perfil, session, sair } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const [menuAberto, setMenuAberto] = useState(false);
 
   async function handleSair() {
     await sair();
@@ -77,6 +80,10 @@ export function Sidebar() {
   const itensBottomNav = hrefsBottomNav
     .map((href) => itens.find((item) => item.href === href))
     .filter((item): item is NavItem => Boolean(item));
+  // No mobile, a barra inferior so cabe alguns itens — o resto aparece no
+  // menu (☰) do topo, em vez de precisar navegar ate a Área do usuário.
+  const hrefsNaBarra = new Set(hrefsBottomNav);
+  const itensExtras = itens.filter((item) => !hrefsNaBarra.has(item.href));
 
   function estaAtivo(href: string) {
     return href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -118,7 +125,48 @@ export function Sidebar() {
 
       <div className="topbar-mobile">
         <span className="brand">CondoFácil</span>
+        {itensExtras.length > 0 && (
+          <button
+            type="button"
+            className="topbar-mobile-menu"
+            aria-label={menuAberto ? 'Fechar menu' : 'Mais opções'}
+            onClick={() => setMenuAberto((v) => !v)}
+          >
+            {menuAberto ? <IconX /> : <IconMenu />}
+          </button>
+        )}
       </div>
+
+      {menuAberto && (
+        <>
+          <button
+            type="button"
+            className="topbar-mobile-overlay"
+            aria-label="Fechar menu"
+            onClick={() => setMenuAberto(false)}
+          />
+          <nav className="topbar-mobile-sheet">
+            {itensExtras.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={estaAtivo(item.href) ? 'active' : ''}
+                  onClick={() => setMenuAberto(false)}
+                >
+                  <Icon />
+                  {item.label}
+                </Link>
+              );
+            })}
+            <button onClick={handleSair}>
+              <IconLogOut />
+              Sair
+            </button>
+          </nav>
+        </>
+      )}
 
       <nav className="bottom-nav">
         {itensBottomNav.map((item) => {
