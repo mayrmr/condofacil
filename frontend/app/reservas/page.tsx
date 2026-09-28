@@ -411,7 +411,14 @@ function ConteudoReservas() {
                     : undefined
                 }
               >
-                <div className="area-card-banner" style={{ background: GRADIENTES_AREA[i % GRADIENTES_AREA.length] }} />
+                <div
+                  className="area-card-banner"
+                  style={{
+                    background: a.fotoUrl
+                      ? `url(${a.fotoUrl}) center/cover`
+                      : GRADIENTES_AREA[i % GRADIENTES_AREA.length],
+                  }}
+                />
                 <div className="area-card-body">
                   <div className="area-card-nome">{a.nome}</div>
                   <div className="area-card-status">

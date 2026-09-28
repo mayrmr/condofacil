@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export class CriarAreaSocialDto {
   @IsString()
@@ -8,4 +8,17 @@ export class CriarAreaSocialDto {
   @IsOptional()
   @IsString()
   descricao?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  capacidadeMaxima?: number;
+
+  @IsOptional()
+  @IsString()
+  horarioFuncionamento?: string;
+
+  @IsOptional()
+  @IsString()
+  regras?: string;
 }

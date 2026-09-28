@@ -119,6 +119,10 @@ export interface AreaSocial {
   nome: string;
   descricao: string | null;
   ativa: boolean;
+  fotoUrl: string | null;
+  capacidadeMaxima: number | null;
+  horarioFuncionamento: string | null;
+  regras: string | null;
 }
 
 export interface PerfilUsuario {

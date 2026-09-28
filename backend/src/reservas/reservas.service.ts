@@ -2,17 +2,27 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import type { CriarReservaDto } from './dto/criar-reserva.dto.js';
 
 @Injectable()
 export class ReservasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   async listarAreas(user: AuthUser) {
-    return this.prisma.areaSocial.findMany({
+    const areas = await this.prisma.areaSocial.findMany({
       where: { predioId: { in: user.predioIds } },
       orderBy: { nome: 'asc' },
     });
+    return Promise.all(
+      areas.map(async (area) => ({
+        ...area,
+        fotoUrl: area.fotoUrl ? await this.storage.criarUrlLeitura(area.fotoUrl) : null,
+      })),
+    );
   }
 
   async listar(user: AuthUser) {

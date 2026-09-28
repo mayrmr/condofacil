@@ -137,11 +137,18 @@ model Apartamento {
 // areas sociais, cadastrada via /predios/:id/areas-sociais, usada tanto para
 // localizacao de ocorrencias/avisos quanto para reservas.
 model AreaSocial {
-  id        String  @id @default(uuid())
-  predioId  String  @map("predio_id")
-  nome      String
-  descricao String?
-  ativa     Boolean @default(true)
+  id                   String  @id @default(uuid())
+  predioId             String  @map("predio_id")
+  nome                 String
+  descricao            String?
+  ativa                Boolean @default(true)
+  // Caminho no bucket do Supabase Storage (mesmo bucket de ocorrencias,
+  // prefixo "areas-sociais/"), nunca uma URL direta — resolvida sob demanda
+  // em signed URL, mesma logica de Imagem.storageUrl.
+  fotoUrl              String? @map("foto_url")
+  capacidadeMaxima     Int?    @map("capacidade_maxima")
+  horarioFuncionamento String? @map("horario_funcionamento")
+  regras               String?
 
   predio   Predio    @relation(fields: [predioId], references: [id])
   reservas Reserva[]

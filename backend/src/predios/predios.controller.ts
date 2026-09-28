@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { ConfirmarImagemDto } from '../common/dto/confirmar-imagem.dto.js';
+import { SolicitarUploadImagemDto } from '../common/dto/solicitar-upload-imagem.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
+import { AtualizarAreaSocialDto } from './dto/atualizar-area-social.dto.js';
 import { CriarApartamentoDto } from './dto/criar-apartamento.dto.js';
 import { CriarAreaSocialDto } from './dto/criar-area-social.dto.js';
 import { CriarBlocoDto } from './dto/criar-bloco.dto.js';
@@ -51,6 +54,39 @@ export class PrediosController {
   @Post(':id/areas-sociais')
   criarAreaSocial(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CriarAreaSocialDto) {
     return this.prediosService.criarAreaSocial(user, id, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Patch(':id/areas-sociais/:areaId')
+  atualizarAreaSocial(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId') areaId: string,
+    @Body() dto: AtualizarAreaSocialDto,
+  ) {
+    return this.prediosService.atualizarAreaSocial(user, id, areaId, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/areas-sociais/:areaId/foto/solicitar-upload')
+  solicitarUploadFotoAreaSocial(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId') areaId: string,
+    @Body() dto: SolicitarUploadImagemDto,
+  ) {
+    return this.prediosService.solicitarUploadFotoAreaSocial(user, id, areaId, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Post(':id/areas-sociais/:areaId/foto')
+  confirmarFotoAreaSocial(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId') areaId: string,
+    @Body() dto: ConfirmarImagemDto,
+  ) {
+    return this.prediosService.confirmarFotoAreaSocial(user, id, areaId, dto);
   }
 
   @Roles(Role.GESTOR)

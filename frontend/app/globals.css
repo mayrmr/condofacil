@@ -568,6 +568,25 @@ button:disabled {
   height: 100px;
 }
 
+.area-card-foto-upload {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(15, 23, 19, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.area-card-foto-upload:hover {
+  background: rgba(15, 23, 19, 0.75);
+}
+
 .area-card-body {
   padding: 14px 16px;
 }
