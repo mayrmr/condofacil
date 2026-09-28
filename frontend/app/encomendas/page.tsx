@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconX } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
@@ -239,7 +240,7 @@ function ConteudoEncomendas() {
 
   return (
     <div className="stack">
-      <h1>Encomendas</h1>
+      <PageTopBar title="Encomendas" />
 
       {(perfil?.role === 'FUNCIONARIO' || perfil?.role === 'GESTOR') && (
         <RegistrarEncomendaForm aoCriar={carregar} />

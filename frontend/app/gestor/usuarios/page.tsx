@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconSearch } from '@/components/icons';
 import { api } from '@/lib/api';
@@ -86,7 +87,7 @@ function ConteudoUsuarios() {
 
   return (
     <div className="stack">
-      <h1>Usuários</h1>
+      <PageTopBar title="Usuários" />
       <p className="muted">Funcionários, proprietários e inquilinos vinculados ao prédio.</p>
 
       <div className="dashboard-toolbar">

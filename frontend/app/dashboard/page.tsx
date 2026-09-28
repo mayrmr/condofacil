@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiltroDropdown } from '@/components/FiltroDropdown';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { OcorrenciaModal } from '@/components/OcorrenciaModal';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
@@ -290,9 +291,7 @@ function ConteudoDashboard() {
 
   return (
     <div className="ocorrencias-page">
-      <div className="row-between">
-        <h1>Ocorrências</h1>
-      </div>
+      <PageTopBar title="Ocorrências" />
 
       <div className="dashboard-toolbar">
         <label className="dashboard-busca">

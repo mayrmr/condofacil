@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconAlertCircle, IconBell } from '@/components/icons';
 import { api } from '@/lib/api';
@@ -158,14 +159,13 @@ function ListaAvisos() {
 
   return (
     <div className="stack">
-      <div className="row-between">
-        <h1>Avisos</h1>
+      <PageTopBar title="Avisos">
         {perfil?.role === 'GESTOR' && (
           <Link href="/avisos/novo" className="btn btn-primary">
             + Novo aviso
           </Link>
         )}
-      </div>
+      </PageTopBar>
       {carregando && <p className="muted">Carregando...</p>}
       {!carregando && avisos.length === 0 && <p className="muted">Nenhum aviso publicado ainda.</p>}
       {(['HOJE', 'ESTA SEMANA', 'ANTERIORES'] as const)

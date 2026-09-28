@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCamera } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
@@ -267,7 +268,7 @@ function GerenciarEstrutura() {
 
   return (
     <div className="stack">
-      <h1>Estrutura do prédio</h1>
+      <PageTopBar title="Estrutura do prédio" />
       <p className="muted">
         Cadastre os blocos, apartamentos e áreas sociais para que os moradores possam escolher a localização
         ao abrir uma ocorrência ou publicar um aviso. As áreas sociais cadastradas aqui também aparecem na

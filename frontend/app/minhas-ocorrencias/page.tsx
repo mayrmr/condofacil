@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { OcorrenciaModal } from '@/components/OcorrenciaModal';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { api } from '@/lib/api';
 import type { Ocorrencia } from '@/lib/types';
@@ -28,12 +29,11 @@ function ListaMinhasOcorrencias() {
 
   return (
     <>
-      <div className="row-between">
-        <h1>Minhas ocorrências</h1>
+      <PageTopBar title="Minhas ocorrências">
         <Link href="/ocorrencias/nova" className="btn btn-primary">
           + Nova ocorrência
         </Link>
-      </div>
+      </PageTopBar>
       {carregando && <p className="muted">Carregando...</p>}
       {erro && <p className="erro">{erro}</p>}
       {!carregando && !erro && ocorrencias.length === 0 && (

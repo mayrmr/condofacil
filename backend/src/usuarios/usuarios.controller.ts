@@ -13,6 +13,11 @@ export class UsuariosController {
     return this.usuariosService.me(user);
   }
 
+  @Get('me/resumo')
+  resumo(@CurrentUser() user: AuthUser) {
+    return this.usuariosService.resumoUsuario(user);
+  }
+
   @Patch('me')
   atualizarMe(@CurrentUser() user: AuthUser, @Body() dto: AtualizarUsuarioDto) {
     return this.usuariosService.atualizarMe(user, dto);

@@ -339,6 +339,88 @@ h1 {
   margin-bottom: 18px;
 }
 
+/* ---------- Barra de topo compartilhada ---------- */
+
+.page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.page-topbar h1 {
+  margin-bottom: 0;
+}
+
+.page-topbar-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Cards de resumo (inicio) ---------- */
+
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.resumo-card {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.resumo-card-numero {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+}
+
+.resumo-card-label {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.atalhos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.atalho-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.atalho-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.atalho-card .chip {
+  flex-shrink: 0;
+}
+
 h2 {
   font-size: 1.05rem;
 }

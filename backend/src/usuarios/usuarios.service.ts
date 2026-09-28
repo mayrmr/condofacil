@@ -122,6 +122,48 @@ export class UsuariosService {
     });
   }
 
+  // periodo determina so a janela do "total de ocorrencias" (criadas no
+  // intervalo); "em andamento" e "total de usuarios" sao contagens do
+  // estado atual, nao fazem sentido janelados por data.
+  async resumoGestor(user: AuthUser, periodo: 'mes' | 'trimestre' | 'ano') {
+    const dias = { mes: 30, trimestre: 90, ano: 365 }[periodo];
+    const desde = new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
+
+    const [totalOcorrencias, ocorrenciasEmAndamento, totalUsuarios] = await Promise.all([
+      this.prisma.ocorrencia.count({
+        where: { predioId: { in: user.predioIds }, criadoEm: { gte: desde } },
+      }),
+      this.prisma.ocorrencia.count({
+        where: {
+          predioId: { in: user.predioIds },
+          statusAtual: { in: ['ANALISE', 'ATENDIMENTO', 'AGUARDA_MATERIAL'] },
+        },
+      }),
+      this.prisma.usuario.count({ where: { predioId: { in: user.predioIds } } }),
+    ]);
+
+    return { totalOcorrencias, ocorrenciasEmAndamento, totalUsuarios };
+  }
+
+  async resumoUsuario(user: AuthUser) {
+    const [encomendasPendentes, proximaReserva] = await Promise.all([
+      this.prisma.encomenda.count({
+        where: { usuarioId: user.perfilId, status: 'AGUARDANDO_RETIRADA' },
+      }),
+      this.prisma.reserva.findFirst({
+        where: {
+          usuarioId: user.perfilId,
+          status: { in: ['PENDENTE', 'CONFIRMADA'] },
+          data: { gte: new Date(new Date().toISOString().slice(0, 10)) },
+        },
+        include: { area: true },
+        orderBy: [{ data: 'asc' }, { horaInicio: 'asc' }],
+      }),
+    ]);
+
+    return { encomendasPendentes, proximaReserva };
+  }
+
   async dashboard(user: AuthUser, query: DashboardQueryDto) {
     if (user.role === Role.USUARIO) {
       throw new ForbiddenException('Este dashboard nao esta disponivel para o seu perfil.');

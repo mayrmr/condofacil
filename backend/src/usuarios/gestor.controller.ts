@@ -4,6 +4,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
 import { DashboardQueryDto } from './dto/dashboard-query.dto.js';
+import { ResumoQueryDto } from './dto/resumo-query.dto.js';
 import { UsuariosService } from './usuarios.service.js';
 
 @Roles(Role.GESTOR)
@@ -19,6 +20,11 @@ export class GestorController {
   @Get('funcionarios')
   funcionarios(@CurrentUser() user: AuthUser) {
     return this.usuariosService.listarFuncionarios(user);
+  }
+
+  @Get('resumo')
+  resumo(@CurrentUser() user: AuthUser, @Query() query: ResumoQueryDto) {
+    return this.usuariosService.resumoGestor(user, query.periodo ?? 'mes');
   }
 
   @Get('dashboard')

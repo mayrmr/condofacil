@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { FiltroDropdown } from '@/components/FiltroDropdown';
+import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconChevronLeft, IconChevronRight, IconPlus } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
@@ -349,8 +350,7 @@ function ConteudoReservas() {
 
   return (
     <div className="stack">
-      <div className="row-between">
-        <h1 style={{ marginBottom: 0 }}>Reservas</h1>
+      <PageTopBar title="Reservas">
         {ehUsuario && (
           <button
             type="button"
@@ -364,7 +364,7 @@ function ConteudoReservas() {
             Nova reserva
           </button>
         )}
-      </div>
+      </PageTopBar>
 
       {destaque && (
         <div className="reserva-destaque">
