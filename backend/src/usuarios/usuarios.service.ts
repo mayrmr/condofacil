@@ -20,6 +20,24 @@ const ETAPAS_KANBAN: StatusOcorrencia[] = [
   'CANCELAMENTO',
 ];
 
+const LABEL_STATUS: Record<StatusOcorrencia, string> = {
+  ABERTURA: 'Aberta',
+  ANALISE: 'Em analise',
+  ATENDIMENTO: 'Em atendimento',
+  AGUARDA_MATERIAL: 'Aguardando material',
+  RESOLVIDA: 'Resolvida',
+  CANCELAMENTO: 'Cancelada',
+  AVALIACAO: 'Avaliada',
+  EXCLUIDA: 'Excluida',
+};
+
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
 function agruparPor<T, K extends string | number>(itens: T[], chave: (item: T) => K): Map<K, T[]> {
   const mapa = new Map<K, T[]>();
   for (const item of itens) {
@@ -108,7 +126,6 @@ export class UsuariosService {
     const ocorrencias = await this.prisma.ocorrencia.findMany({
       where: {
         predioId: { in: user.predioIds },
-        ...(query.q ? { titulo: { contains: query.q, mode: 'insensitive' } } : {}),
         ...(query.categoria ? { categoria: query.categoria } : {}),
         ...(query.blocoId ? { localizacaoTipo: 'BLOCO', localizacaoId: query.blocoId } : {}),
         ...(query.responsavelFuncionarioId
@@ -130,19 +147,52 @@ export class UsuariosService {
       localizacaoNome: nomesLocalizacao.get(`${o.localizacaoTipo}:${o.localizacaoId}`) ?? null,
     }));
 
+    // Busca livre: nao da pra filtrar isso tudo no banco porque
+    // localizacaoNome/rotulo de status/data formatada sao derivados em
+    // memoria (ver comentario da funcao resolverNomesLocalizacao); entao o
+    // texto digitado e comparado contra tudo que aparece pro usuario no
+    // cartao — titulo, descricao, categoria, autor, local e data.
+    const filtrado = query.q ? comLocalizacao.filter((o) => this.correspondeABusca(o, query.q!)) : comLocalizacao;
+
     switch (query.view) {
       case 'kanban': {
-        const agrupado = agruparPor(comLocalizacao, (o) => o.statusAtual);
+        const agrupado = agruparPor(filtrado, (o) => o.statusAtual);
         return Object.fromEntries(ETAPAS_KANBAN.map((etapa) => [etapa, agrupado.get(etapa) ?? []]));
       }
       case 'calendario':
-        return Object.fromEntries(
-          agruparPor(comLocalizacao, (o) => o.criadoEm.toISOString().slice(0, 10)),
-        );
+        return Object.fromEntries(agruparPor(filtrado, (o) => o.criadoEm.toISOString().slice(0, 10)));
       case 'lista':
       default:
-        return comLocalizacao;
+        return filtrado;
     }
+  }
+
+  private correspondeABusca(
+    ocorrencia: {
+      titulo: string;
+      descricao: string;
+      categoria: string;
+      statusAtual: StatusOcorrencia;
+      criadoEm: Date;
+      usuario: { nomeCompleto: string } | null;
+      localizacaoNome: string | null;
+    },
+    termoBusca: string,
+  ): boolean {
+    const termo = normalizar(termoBusca);
+    const dataIso = ocorrencia.criadoEm.toISOString().slice(0, 10);
+    const dataBr = ocorrencia.criadoEm.toLocaleDateString('pt-BR');
+    const campos = [
+      ocorrencia.titulo,
+      ocorrencia.descricao,
+      ocorrencia.categoria,
+      LABEL_STATUS[ocorrencia.statusAtual],
+      ocorrencia.usuario?.nomeCompleto,
+      ocorrencia.localizacaoNome,
+      dataIso,
+      dataBr,
+    ];
+    return campos.some((campo) => campo && normalizar(campo).includes(termo));
   }
 
   // Resolve o par (localizacaoTipo, localizacaoId) — sem FK declarada no

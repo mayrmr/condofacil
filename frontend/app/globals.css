@@ -76,6 +76,10 @@ h3 {
   width: 236px;
   background: var(--sidebar-bg);
   color: var(--sidebar-fg);
+  align-self: stretch;
+}
+
+.sidebar-inner {
   display: flex;
   flex-direction: column;
   padding: 22px 16px;
@@ -592,6 +596,62 @@ button:disabled {
 .erro {
   color: var(--danger);
   font-size: 0.85rem;
+}
+
+/* ---------- Modal (detalhe de ocorrencia) ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 19, 0.6);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.modal-painel {
+  position: relative;
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 720px;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(15, 23, 19, 0.35);
+}
+
+.modal-fechar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-strong);
+  z-index: 1;
+}
+
+.modal-conteudo h1 {
+  padding-right: 44px;
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .modal-painel {
+    border-radius: 0;
+    max-width: none;
+    min-height: 100%;
+  }
 }
 
 /* ---------- Quick access tiles (home) ---------- */

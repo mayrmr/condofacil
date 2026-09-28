@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
+import { OcorrenciaModal } from '@/components/OcorrenciaModal';
 import { RequireAuth } from '@/components/RequireAuth';
 import { api } from '@/lib/api';
 import type { Ocorrencia } from '@/lib/types';
@@ -11,14 +12,19 @@ function ListaMinhasOcorrencias() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [ocorrenciaAbertaId, setOcorrenciaAbertaId] = useState<string | null>(null);
 
-  useEffect(() => {
-    api
+  const carregar = useCallback(() => {
+    return api
       .get<Ocorrencia[]>('/ocorrencias?minhas=true')
       .then(setOcorrencias)
       .catch(() => setErro('Não foi possível carregar suas ocorrências.'))
       .finally(() => setCarregando(false));
   }, []);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
 
   return (
     <>
@@ -35,9 +41,16 @@ function ListaMinhasOcorrencias() {
       )}
       <div className="stack">
         {ocorrencias.map((o) => (
-          <OcorrenciaCard key={o.id} ocorrencia={o} />
+          <OcorrenciaCard key={o.id} ocorrencia={o} aoAbrir={setOcorrenciaAbertaId} />
         ))}
       </div>
+      {ocorrenciaAbertaId && (
+        <OcorrenciaModal
+          id={ocorrenciaAbertaId}
+          aoFechar={() => setOcorrenciaAbertaId(null)}
+          aoAlterar={carregar}
+        />
+      )}
     </>
   );
 }

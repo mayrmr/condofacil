@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
+import { OcorrenciaModal } from '@/components/OcorrenciaModal';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconBell, IconCalendar, IconPackage, IconPlus } from '@/components/icons';
 import { api } from '@/lib/api';
@@ -85,19 +86,19 @@ function FeedConteudo() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [categoria, setCategoria] = useState('');
   const [carregando, setCarregando] = useState(true);
+  const [ocorrenciaAbertaId, setOcorrenciaAbertaId] = useState<string | null>(null);
 
-  async function carregar() {
+  const carregar = useCallback(async () => {
     const query = categoria ? `?categoria=${encodeURIComponent(categoria)}` : '';
     const dados = await api.get<Ocorrencia[]>(`/ocorrencias${query}`);
     setOcorrencias(dados);
     setCarregando(false);
-  }
+  }, [categoria]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- busca inicial/refetch ao mudar o filtro, padrao de data fetching em effect
     carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoria]);
+  }, [carregar]);
 
   return (
     <div className="stack">
@@ -125,10 +126,18 @@ function FeedConteudo() {
         {!carregando && ocorrencias.length === 0 && <p className="muted">Nenhuma ocorrência por aqui ainda.</p>}
         <div className="stack" style={{ marginTop: 8 }}>
           {ocorrencias.map((o) => (
-            <OcorrenciaCard key={o.id} ocorrencia={o} />
+            <OcorrenciaCard key={o.id} ocorrencia={o} aoAbrir={setOcorrenciaAbertaId} />
           ))}
         </div>
       </div>
+
+      {ocorrenciaAbertaId && (
+        <OcorrenciaModal
+          id={ocorrenciaAbertaId}
+          aoFechar={() => setOcorrenciaAbertaId(null)}
+          aoAlterar={carregar}
+        />
+      )}
     </div>
   );
 }

@@ -84,32 +84,34 @@ export function Sidebar() {
   return (
     <>
       <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-icon">
-            <IconBuilding style={{ width: 18, height: 18 }} />
-          </span>
-          CondoFácil
-        </div>
-        <nav>
-          {itens.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className={estaAtivo(item.href) ? 'active' : ''}>
-                <Icon />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="sidebar-footer">
-          <span className="avatar">{iniciais(perfil.nomeCompleto)}</span>
-          <div className="who">
-            <strong>{perfil.nomeCompleto}</strong>
-            <span>{perfil.role}</span>
+        <div className="sidebar-inner">
+          <div className="brand">
+            <span className="brand-icon">
+              <IconBuilding style={{ width: 18, height: 18 }} />
+            </span>
+            CondoFácil
           </div>
-          <button onClick={handleSair} title="Sair" aria-label="Sair">
-            <IconLogOut style={{ width: 16, height: 16 }} />
-          </button>
+          <nav>
+            {itens.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.href} href={item.href} className={estaAtivo(item.href) ? 'active' : ''}>
+                  <Icon />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="sidebar-footer">
+            <span className="avatar">{iniciais(perfil.nomeCompleto)}</span>
+            <div className="who">
+              <strong>{perfil.nomeCompleto}</strong>
+              <span>{perfil.role}</span>
+            </div>
+            <button onClick={handleSair} title="Sair" aria-label="Sair">
+              <IconLogOut style={{ width: 16, height: 16 }} />
+            </button>
+          </div>
         </div>
       </aside>
 

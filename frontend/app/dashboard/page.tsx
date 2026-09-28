@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
+import { OcorrenciaModal } from '@/components/OcorrenciaModal';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch, IconX } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
@@ -73,11 +74,13 @@ function CartaoKanban({
   arrastavel,
   aoIniciarArrasto,
   aoTerminarArrasto,
+  aoAbrir,
 }: {
   ocorrencia: Ocorrencia;
   arrastavel: boolean;
   aoIniciarArrasto: () => void;
   aoTerminarArrasto: () => void;
+  aoAbrir: (id: string) => void;
 }) {
   const urgente = ocorrencia.prioridade === 'URGENTE';
   return (
@@ -91,6 +94,11 @@ function CartaoKanban({
         aoIniciarArrasto();
       }}
       onDragEnd={aoTerminarArrasto}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        aoAbrir(ocorrencia.id);
+      }}
     >
       <span className={`categoria-badge${urgente ? ' urgente' : ''}`}>
         {urgente ? 'Urgente' : ocorrencia.categoria}
@@ -113,6 +121,7 @@ function ColunaKanban({
   aoIniciarArrasto,
   aoTerminarArrasto,
   aoSoltar,
+  aoAbrir,
 }: {
   status: StatusOcorrencia;
   itens: Ocorrencia[];
@@ -120,6 +129,7 @@ function ColunaKanban({
   aoIniciarArrasto: (ocorrencia: Ocorrencia) => void;
   aoTerminarArrasto: () => void;
   aoSoltar: (statusDestino: StatusOcorrencia) => void;
+  aoAbrir: (id: string) => void;
 }) {
   const alvoValido = Boolean(arrasto && arrasto.permitidos.includes(status));
   return (
@@ -145,6 +155,7 @@ function ColunaKanban({
           arrastavel={arrasto === null || arrasto.id === o.id}
           aoIniciarArrasto={() => aoIniciarArrasto(o)}
           aoTerminarArrasto={aoTerminarArrasto}
+          aoAbrir={aoAbrir}
         />
       ))}
     </div>
@@ -248,6 +259,7 @@ function ConteudoDashboard() {
   const [buscaAplicada, setBuscaAplicada] = useState('');
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_PADRAO);
   const [arrasto, setArrasto] = useState<Arrasto | null>(null);
+  const [ocorrenciaAbertaId, setOcorrenciaAbertaId] = useState<string | null>(null);
 
   useEffect(() => {
     if (perfil?.role === 'GESTOR') {
@@ -335,6 +347,11 @@ function ConteudoDashboard() {
     } catch (err) {
       alert(err instanceof ApiError ? err.message : 'Não foi possível mover a ocorrência.');
     }
+  }
+
+  async function aoAlterarOcorrenciaAberta() {
+    const atualizado = await buscarDashboard();
+    setDados(atualizado);
   }
 
   return (
@@ -445,7 +462,7 @@ function ConteudoDashboard() {
       {!carregando && visao === 'lista' && (
         <div className="stack">
           {(dados as Ocorrencia[]).map((o) => (
-            <OcorrenciaCard key={o.id} ocorrencia={o} />
+            <OcorrenciaCard key={o.id} ocorrencia={o} aoAbrir={setOcorrenciaAbertaId} />
           ))}
           {(dados as Ocorrencia[]).length === 0 && <p className="muted">Nenhuma ocorrência encontrada.</p>}
         </div>
@@ -462,6 +479,7 @@ function ConteudoDashboard() {
               aoIniciarArrasto={iniciarArrasto}
               aoTerminarArrasto={() => setArrasto(null)}
               aoSoltar={soltarEm}
+              aoAbrir={setOcorrenciaAbertaId}
             />
           ))}
         </div>
@@ -476,7 +494,15 @@ function ConteudoDashboard() {
                 <h3>{data}</h3>
                 <div className="stack" style={{ marginTop: 8 }}>
                   {itens.map((o) => (
-                    <a key={o.id} href={`/ocorrencias/${o.id}`}>
+                    <a
+                      key={o.id}
+                      href={`/ocorrencias/${o.id}`}
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                        e.preventDefault();
+                        setOcorrenciaAbertaId(o.id);
+                      }}
+                    >
                       {o.titulo}
                     </a>
                   ))}
@@ -487,6 +513,14 @@ function ConteudoDashboard() {
             <p className="muted">Nenhuma ocorrência encontrada.</p>
           )}
         </div>
+      )}
+
+      {ocorrenciaAbertaId && (
+        <OcorrenciaModal
+          id={ocorrenciaAbertaId}
+          aoFechar={() => setOcorrenciaAbertaId(null)}
+          aoAlterar={aoAlterarOcorrenciaAberta}
+        />
       )}
     </div>
   );
