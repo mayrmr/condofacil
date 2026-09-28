@@ -33,7 +33,7 @@ describe('OcorrenciaCard', () => {
 
     expect(screen.getByText('Vazamento no corredor')).toBeInTheDocument();
     expect(screen.getByText('Aberta')).toBeInTheDocument();
-    expect(screen.getByText(/vazamento/)).toBeInTheDocument();
+    expect(screen.getByText(/Vazamento ·/)).toBeInTheDocument();
   });
 
   it('mostra a prioridade quando ela esta definida', () => {

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { RequireAuth } from '@/components/RequireAuth';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { LABEL_CATEGORIA } from '@/lib/formatacao';
 import type { AreaSocial, Bloco, LocalizacaoTipo, Ocorrencia, PerfilUsuario } from '@/lib/types';
 
 const CATEGORIAS = [
@@ -87,7 +88,7 @@ function FormularioNovaOcorrencia() {
         <select id="categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
           {CATEGORIAS.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {LABEL_CATEGORIA[c] ?? c}
             </option>
           ))}
         </select>

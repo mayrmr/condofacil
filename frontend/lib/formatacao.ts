@@ -11,6 +11,19 @@ export const LABEL_STATUS: Record<StatusOcorrencia, string> = {
   EXCLUIDA: 'Excluída',
 };
 
+// Mesmas 7 categorias usadas no formulario de nova ocorrencia e no filtro
+// do quadro (valor salvo no banco continua sem acento/caixa baixa — isso e
+// so o rotulo exibido).
+export const LABEL_CATEGORIA: Record<string, string> = {
+  iluminacao: 'Iluminação',
+  equipamento: 'Equipamento',
+  vazamento: 'Vazamento',
+  acessibilidade: 'Acessibilidade',
+  seguranca: 'Segurança',
+  manutencao: 'Manutenção',
+  outro: 'Outro',
+};
+
 export function formatarData(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }

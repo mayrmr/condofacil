@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { Prioridade, StatusOcorrencia } from '../../generated/prisma/enums.js';
 
 export const VISOES_DASHBOARD = ['kanban', 'calendario', 'lista'] as const;
@@ -39,4 +39,12 @@ export class DashboardQueryDto {
   @IsInt()
   @Min(1)
   periodoDias?: number;
+
+  @IsOptional()
+  @IsDateString()
+  dataInicio?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataFim?: string;
 }

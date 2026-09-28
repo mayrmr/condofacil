@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { IconCheck } from './icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { formatarData, LABEL_STATUS } from '@/lib/formatacao';
+import { formatarData, LABEL_CATEGORIA, LABEL_STATUS } from '@/lib/formatacao';
 import { supabase } from '@/lib/supabase-client';
 import { transicoesPermitidas } from '@/lib/state-machine';
 import type {
@@ -151,7 +151,7 @@ export function OcorrenciaDetalhe({
       <div className="card">
         <p>{ocorrencia.descricao}</p>
         <p className="muted" style={{ marginTop: 8 }}>
-          {ocorrencia.categoria} · {formatarData(ocorrencia.criadoEm)}
+          {LABEL_CATEGORIA[ocorrencia.categoria] ?? ocorrencia.categoria} · {formatarData(ocorrencia.criadoEm)}
           {ocorrencia.prioridade ? ` · Prioridade ${ocorrencia.prioridade.toLowerCase()}` : ' · Sem prioridade definida'}
         </p>
         {ocorrencia.solucaoAplicada && (

@@ -964,6 +964,16 @@ button:disabled {
   margin-bottom: 18px;
 }
 
+.periodo-personalizado {
+  gap: 6px;
+}
+
+.periodo-personalizado input {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
 .filtros-label {
   display: inline-flex;
   align-items: center;

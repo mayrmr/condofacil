@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { MouseEvent } from 'react';
-import { formatarData, LABEL_STATUS } from '@/lib/formatacao';
+import { formatarData, LABEL_CATEGORIA, LABEL_STATUS } from '@/lib/formatacao';
 import type { Ocorrencia } from '@/lib/types';
 
 export function OcorrenciaCard({
@@ -25,7 +25,7 @@ export function OcorrenciaCard({
         <span className={`badge badge-${ocorrencia.statusAtual}`}>{LABEL_STATUS[ocorrencia.statusAtual]}</span>
       </div>
       <p className="muted" style={{ marginTop: 6 }}>
-        {ocorrencia.categoria} · {formatarData(ocorrencia.criadoEm)}
+        {LABEL_CATEGORIA[ocorrencia.categoria] ?? ocorrencia.categoria} · {formatarData(ocorrencia.criadoEm)}
         {ocorrencia.prioridade ? ` · Prioridade ${ocorrencia.prioridade.toLowerCase()}` : ''}
       </p>
     </Link>

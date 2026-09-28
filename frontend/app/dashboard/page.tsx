@@ -7,7 +7,7 @@ import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch, IconX } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { COR_STATUS, LABEL_STATUS, tempoRelativo } from '@/lib/formatacao';
+import { COR_STATUS, LABEL_CATEGORIA, LABEL_STATUS, tempoRelativo } from '@/lib/formatacao';
 import { transicoesPermitidas } from '@/lib/state-machine';
 import type { Bloco, Ocorrencia, PerfilFuncionarioOuGestor, Prioridade, StatusOcorrencia } from '@/lib/types';
 
@@ -52,6 +52,8 @@ interface Filtros {
   prioridade: string;
   status: string;
   periodoDias: number | undefined;
+  dataInicio: string;
+  dataFim: string;
 }
 
 const FILTROS_PADRAO: Filtros = {
@@ -61,6 +63,8 @@ const FILTROS_PADRAO: Filtros = {
   prioridade: '',
   status: '',
   periodoDias: 30,
+  dataInicio: '',
+  dataFim: '',
 };
 
 interface Arrasto {
@@ -101,7 +105,7 @@ function CartaoKanban({
       }}
     >
       <span className={`categoria-badge${urgente ? ' urgente' : ''}`}>
-        {urgente ? 'Urgente' : ocorrencia.categoria}
+        {urgente ? 'Urgente' : (LABEL_CATEGORIA[ocorrencia.categoria] ?? ocorrencia.categoria)}
       </span>
       <strong>{ocorrencia.titulo}</strong>
       <span className="autor">
@@ -258,6 +262,7 @@ function ConteudoDashboard() {
   const [busca, setBusca] = useState('');
   const [buscaAplicada, setBuscaAplicada] = useState('');
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_PADRAO);
+  const [periodoPersonalizado, setPeriodoPersonalizado] = useState(false);
   const [arrasto, setArrasto] = useState<Arrasto | null>(null);
   const [ocorrenciaAbertaId, setOcorrenciaAbertaId] = useState<string | null>(null);
 
@@ -286,7 +291,12 @@ function ConteudoDashboard() {
     if (filtros.responsavelFuncionarioId) params.set('responsavelFuncionarioId', filtros.responsavelFuncionarioId);
     if (filtros.prioridade) params.set('prioridade', filtros.prioridade);
     if (filtros.status) params.set('status', filtros.status);
-    if (filtros.periodoDias) params.set('periodoDias', String(filtros.periodoDias));
+    if (filtros.dataInicio && filtros.dataFim) {
+      params.set('dataInicio', filtros.dataInicio);
+      params.set('dataFim', filtros.dataFim);
+    } else if (filtros.periodoDias) {
+      params.set('periodoDias', String(filtros.periodoDias));
+    }
     return api.get<ResultadoDashboard>(`${rota}?${params.toString()}`);
   }, [visao, perfil, buscaAplicada, filtros]);
 
@@ -314,13 +324,20 @@ function ConteudoDashboard() {
           filtros.responsavelFuncionarioId ||
           filtros.prioridade ||
           filtros.status ||
-          filtros.periodoDias !== FILTROS_PADRAO.periodoDias,
+          filtros.periodoDias !== FILTROS_PADRAO.periodoDias ||
+          filtros.dataInicio ||
+          filtros.dataFim,
       ),
     [filtros],
   );
 
   function limparFiltro<K extends keyof Filtros>(chave: K) {
     setFiltros((atual) => ({ ...atual, [chave]: FILTROS_PADRAO[chave] }));
+  }
+
+  function limparPeriodo() {
+    setPeriodoPersonalizado(false);
+    setFiltros((atual) => ({ ...atual, periodoDias: FILTROS_PADRAO.periodoDias, dataInicio: '', dataFim: '' }));
   }
 
   function iniciarArrasto(ocorrencia: Ocorrencia) {
@@ -413,7 +430,7 @@ function ConteudoDashboard() {
           label="Categoria"
           valorSelecionado={filtros.categoria}
           ativo={filtros.categoria !== ''}
-          opcoes={[{ valor: '', texto: 'Todas' }, ...CATEGORIAS.map((c) => ({ valor: c, texto: c }))]}
+          opcoes={[{ valor: '', texto: 'Todas' }, ...CATEGORIAS.map((c) => ({ valor: c, texto: LABEL_CATEGORIA[c] ?? c }))]}
           aoSelecionar={(v) => setFiltros((f) => ({ ...f, categoria: v }))}
           aoLimpar={() => limparFiltro('categoria')}
         />
@@ -443,15 +460,51 @@ function ConteudoDashboard() {
 
         <FiltroDropdown
           label="Período"
-          valorSelecionado={filtros.periodoDias ? String(filtros.periodoDias) : ''}
-          ativo={filtros.periodoDias !== FILTROS_PADRAO.periodoDias}
-          opcoes={PERIODOS.map((p) => ({ valor: p.dias ? String(p.dias) : '', texto: p.label }))}
-          aoSelecionar={(v) => setFiltros((f) => ({ ...f, periodoDias: v ? Number(v) : undefined }))}
-          aoLimpar={() => limparFiltro('periodoDias')}
+          valorSelecionado={periodoPersonalizado ? 'custom' : filtros.periodoDias ? String(filtros.periodoDias) : ''}
+          ativo={filtros.periodoDias !== FILTROS_PADRAO.periodoDias || periodoPersonalizado}
+          opcoes={[
+            ...PERIODOS.map((p) => ({ valor: p.dias ? String(p.dias) : '', texto: p.label })),
+            { valor: 'custom', texto: 'Personalizado' },
+          ]}
+          aoSelecionar={(v) => {
+            if (v === 'custom') {
+              setPeriodoPersonalizado(true);
+              setFiltros((f) => ({ ...f, periodoDias: undefined }));
+            } else {
+              setPeriodoPersonalizado(false);
+              setFiltros((f) => ({ ...f, periodoDias: v ? Number(v) : undefined, dataInicio: '', dataFim: '' }));
+            }
+          }}
+          aoLimpar={limparPeriodo}
         />
 
+        {periodoPersonalizado && (
+          <div className="row periodo-personalizado">
+            <input
+              type="date"
+              aria-label="Data inicial"
+              value={filtros.dataInicio}
+              onChange={(e) => setFiltros((f) => ({ ...f, dataInicio: e.target.value }))}
+            />
+            <span className="muted">até</span>
+            <input
+              type="date"
+              aria-label="Data final"
+              value={filtros.dataFim}
+              onChange={(e) => setFiltros((f) => ({ ...f, dataFim: e.target.value }))}
+            />
+          </div>
+        )}
+
         {filtrosAtivos && (
-          <button type="button" className="filtros-limpar-todos" onClick={() => setFiltros(FILTROS_PADRAO)}>
+          <button
+            type="button"
+            className="filtros-limpar-todos"
+            onClick={() => {
+              setPeriodoPersonalizado(false);
+              setFiltros(FILTROS_PADRAO);
+            }}
+          >
             Limpar filtros
           </button>
         )}

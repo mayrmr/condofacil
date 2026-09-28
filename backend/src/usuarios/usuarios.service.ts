@@ -133,9 +133,16 @@ export class UsuariosService {
           : {}),
         ...(query.prioridade ? { prioridade: query.prioridade } : {}),
         ...(query.status ? { statusAtual: query.status } : {}),
-        ...(query.periodoDias
-          ? { criadoEm: { gte: new Date(Date.now() - query.periodoDias * 24 * 60 * 60 * 1000) } }
-          : {}),
+        ...(query.dataInicio && query.dataFim
+          ? {
+              criadoEm: {
+                gte: new Date(`${query.dataInicio}T00:00:00.000Z`),
+                lte: new Date(`${query.dataFim}T23:59:59.999Z`),
+              },
+            }
+          : query.periodoDias
+            ? { criadoEm: { gte: new Date(Date.now() - query.periodoDias * 24 * 60 * 60 * 1000) } }
+            : {}),
       },
       include: { usuario: { select: { nomeCompleto: true } } },
       orderBy: { criadoEm: 'desc' },
