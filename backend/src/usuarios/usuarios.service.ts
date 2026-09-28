@@ -1,11 +1,24 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { AuthUser } from '../common/types/auth-user.type.js';
-import { Role } from '../generated/prisma/enums.js';
+import { Role, StatusOcorrencia } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto.js';
 import { VISOES_DASHBOARD, type VisaoDashboard } from './dto/dashboard-query.dto.js';
 
 const VISOES_SOMENTE_GESTOR: VisaoDashboard[] = ['funcionarios', 'areas'];
+
+// Etapas do quadro kanban, na ordem do fluxo (secao 6 da especificacao).
+// EXCLUIDA fica de fora: e um cancelamento antes de analise, nao uma etapa
+// de trabalho. As colunas aparecem sempre, mesmo vazias.
+const ETAPAS_KANBAN: StatusOcorrencia[] = [
+  'ABERTURA',
+  'ANALISE',
+  'ATENDIMENTO',
+  'AGUARDA_MATERIAL',
+  'RESOLVIDA',
+  'AVALIACAO',
+  'CANCELAMENTO',
+];
 
 function agruparPor<T, K extends string | number>(itens: T[], chave: (item: T) => K): Map<K, T[]> {
   const mapa = new Map<K, T[]>();
@@ -94,12 +107,15 @@ export class UsuariosService {
 
     const ocorrencias = await this.prisma.ocorrencia.findMany({
       where: { predioId: { in: user.predioIds } },
+      include: { usuario: { select: { nomeCompleto: true } } },
       orderBy: { criadoEm: 'desc' },
     });
 
     switch (view) {
-      case 'kanban':
-        return Object.fromEntries(agruparPor(ocorrencias, (o) => o.statusAtual));
+      case 'kanban': {
+        const agrupado = agruparPor(ocorrencias, (o) => o.statusAtual);
+        return Object.fromEntries(ETAPAS_KANBAN.map((etapa) => [etapa, agrupado.get(etapa) ?? []]));
+      }
       case 'calendario':
         return Object.fromEntries(
           agruparPor(ocorrencias, (o) => o.criadoEm.toISOString().slice(0, 10)),
