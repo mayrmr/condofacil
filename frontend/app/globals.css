@@ -460,6 +460,135 @@ button:disabled {
 .badge-AVALIACAO { background: color-mix(in srgb, var(--success) 18%, var(--surface-strong)); color: var(--success); }
 .badge-EXCLUIDA { background: var(--danger-soft); color: var(--danger); }
 
+/* ---------- Reservas ---------- */
+
+.reserva-destaque {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+}
+
+.reserva-destaque-data {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.reserva-destaque-data span {
+  font-size: 0.7rem;
+  color: var(--sidebar-muted);
+}
+
+.reserva-destaque-data strong {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.reserva-destaque-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.reserva-destaque-titulo {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.reserva-destaque-sub {
+  font-size: 0.82rem;
+  color: var(--sidebar-muted);
+  margin-top: 3px;
+}
+
+.reserva-destaque-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--sidebar-bg);
+  background: var(--accent);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.reserva-item-icone {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.areas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.area-card {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.area-card-clicavel {
+  cursor: pointer;
+}
+
+.area-card-clicavel:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.area-card-indisponivel {
+  opacity: 0.6;
+}
+
+.area-card-banner {
+  height: 100px;
+}
+
+.area-card-body {
+  padding: 14px 16px;
+}
+
+.area-card-nome {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.area-card-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .areas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .reserva-destaque {
+    flex-wrap: wrap;
+  }
+}
+
 .erro {
   color: var(--danger);
   font-size: 0.85rem;
