@@ -174,6 +174,13 @@ function ConteudoDashboard() {
 
   const [visao, setVisao] = useState<Visao>('kanban');
   const [dados, setDados] = useState<ResultadoDashboard>([]);
+  // Marca a visao a que "dados" de fato corresponde. Ao trocar de aba, o
+  // estado "visao" muda antes do efeito de busca rodar — nesse intervalo,
+  // "dados" ainda tem o formato da aba anterior (objeto vs array), e
+  // renderizar contra "visao" direto quebraria (ex.: .map em objeto do
+  // kanban ao trocar pra lista). Usar "dadosVisao" garante que so
+  // renderizamos "dados" na visao pra qual ele foi realmente buscado.
+  const [dadosVisao, setDadosVisao] = useState<Visao>('kanban');
   const [funcionarios, setFuncionarios] = useState<PerfilFuncionarioOuGestor[]>([]);
   const [blocos, setBlocos] = useState<Bloco[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -227,12 +234,13 @@ function ConteudoDashboard() {
       // uma mais recente que tenha chegado primeiro.
       if (cancelado) return;
       setDados(r);
+      setDadosVisao(visao);
       setCarregando(false);
     });
     return () => {
       cancelado = true;
     };
-  }, [buscarDashboard]);
+  }, [buscarDashboard, visao]);
 
   const filtrosAtivos = useMemo(
     () =>
@@ -426,9 +434,9 @@ function ConteudoDashboard() {
         )}
       </div>
 
-      {carregando && <p className="muted">Carregando...</p>}
+      {(carregando || dadosVisao !== visao) && <p className="muted">Carregando...</p>}
 
-      {!carregando && visao === 'lista' && (
+      {!carregando && dadosVisao === visao && visao === 'lista' && (
         <div className="stack">
           {(dados as Ocorrencia[]).map((o) => (
             <OcorrenciaCard key={o.id} ocorrencia={o} aoAbrir={setOcorrenciaAbertaId} />
@@ -437,7 +445,7 @@ function ConteudoDashboard() {
         </div>
       )}
 
-      {!carregando && visao === 'kanban' && (
+      {!carregando && dadosVisao === visao && visao === 'kanban' && (
         <div className="kanban">
           {ETAPAS_KANBAN.map((status) => (
             <ColunaKanban
@@ -454,7 +462,7 @@ function ConteudoDashboard() {
         </div>
       )}
 
-      {!carregando && visao === 'calendario' && (
+      {!carregando && dadosVisao === visao && visao === 'calendario' && (
         <div className="stack">
           {Object.entries(dados as Record<string, Ocorrencia[]>)
             .sort(([a], [b]) => b.localeCompare(a))
