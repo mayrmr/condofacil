@@ -66,8 +66,8 @@ describe('ocorrencia state machine', () => {
     expect(podeTransicionar('ATENDIMENTO', 'EXCLUIDA', 'USUARIO')).toBe(false);
   });
 
-  it('so o gestor cancela, a partir de analise, atendimento ou aguarda material', () => {
-    for (const de of ['ANALISE', 'ATENDIMENTO', 'AGUARDA_MATERIAL'] as StatusOcorrencia[]) {
+  it('so o gestor cancela, a partir de abertura, analise, atendimento ou aguarda material', () => {
+    for (const de of ['ABERTURA', 'ANALISE', 'ATENDIMENTO', 'AGUARDA_MATERIAL'] as StatusOcorrencia[]) {
       expect(podeTransicionar(de, 'CANCELAMENTO', 'GESTOR')).toBe(true);
       expect(podeTransicionar(de, 'CANCELAMENTO', 'FUNCIONARIO')).toBe(false);
       expect(podeTransicionar(de, 'CANCELAMENTO', 'USUARIO')).toBe(false);

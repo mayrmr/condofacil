@@ -13,6 +13,7 @@ export interface Transicao {
 export const TRANSICOES: readonly Transicao[] = [
   { de: 'ABERTURA', para: 'ANALISE', rolesPermitidas: ['GESTOR'] },
   { de: 'ABERTURA', para: 'EXCLUIDA', rolesPermitidas: ['USUARIO'] },
+  { de: 'ABERTURA', para: 'CANCELAMENTO', rolesPermitidas: ['GESTOR'] },
   { de: 'ANALISE', para: 'ATENDIMENTO', rolesPermitidas: ['GESTOR'] },
   { de: 'ANALISE', para: 'CANCELAMENTO', rolesPermitidas: ['GESTOR'] },
   { de: 'ATENDIMENTO', para: 'AGUARDA_MATERIAL', rolesPermitidas: ['FUNCIONARIO'] },

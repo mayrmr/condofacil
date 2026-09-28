@@ -5,14 +5,19 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto.js';
 import type { DashboardQueryDto } from './dto/dashboard-query.dto.js';
 
-// Colunas fixas do kanban de ocorrencias (secao 6 da especificacao, agrupada
-// em 3 baldes visiveis de uma vez — mesma estrutura do mockup de
-// referencia). EXCLUIDA fica de fora: e um cancelamento antes de analise,
-// nao uma etapa de trabalho. As colunas aparecem sempre, mesmo vazias.
-const BUCKETS_KANBAN: { chave: string; label: string; status: StatusOcorrencia[] }[] = [
-  { chave: 'ABERTAS', label: 'Abertas', status: ['ABERTURA', 'ANALISE'] },
-  { chave: 'EM_ANDAMENTO', label: 'Em andamento', status: ['ATENDIMENTO', 'AGUARDA_MATERIAL'] },
-  { chave: 'CONCLUIDAS', label: 'Concluídas', status: ['RESOLVIDA', 'AVALIACAO', 'CANCELAMENTO'] },
+// Etapas do quadro kanban, na ordem do fluxo completo (secao 6 da
+// especificacao) — uma coluna por status, do jeito que o fluxo real de
+// ocorrencias do predio funciona. EXCLUIDA fica de fora: e um cancelamento
+// antes de analise, nao uma etapa de trabalho. As colunas aparecem sempre,
+// mesmo vazias.
+const ETAPAS_KANBAN: StatusOcorrencia[] = [
+  'ABERTURA',
+  'ANALISE',
+  'ATENDIMENTO',
+  'AGUARDA_MATERIAL',
+  'RESOLVIDA',
+  'AVALIACAO',
+  'CANCELAMENTO',
 ];
 
 function agruparPor<T, K extends string | number>(itens: T[], chave: (item: T) => K): Map<K, T[]> {
@@ -110,6 +115,7 @@ export class UsuariosService {
           ? { responsavelFuncionarioId: query.responsavelFuncionarioId }
           : {}),
         ...(query.prioridade ? { prioridade: query.prioridade } : {}),
+        ...(query.status ? { statusAtual: query.status } : {}),
         ...(query.periodoDias
           ? { criadoEm: { gte: new Date(Date.now() - query.periodoDias * 24 * 60 * 60 * 1000) } }
           : {}),
@@ -127,11 +133,7 @@ export class UsuariosService {
     switch (query.view) {
       case 'kanban': {
         const agrupado = agruparPor(comLocalizacao, (o) => o.statusAtual);
-        return BUCKETS_KANBAN.map((b) => ({
-          chave: b.chave,
-          label: b.label,
-          itens: b.status.flatMap((s) => agrupado.get(s) ?? []),
-        }));
+        return Object.fromEntries(ETAPAS_KANBAN.map((etapa) => [etapa, agrupado.get(etapa) ?? []]));
       }
       case 'calendario':
         return Object.fromEntries(

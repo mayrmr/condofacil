@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
-import { Prioridade } from '../../generated/prisma/enums.js';
+import { Prioridade, StatusOcorrencia } from '../../generated/prisma/enums.js';
 
 export const VISOES_DASHBOARD = ['kanban', 'calendario', 'lista'] as const;
 
@@ -29,6 +29,10 @@ export class DashboardQueryDto {
   @IsOptional()
   @IsIn(Object.values(Prioridade))
   prioridade?: Prioridade;
+
+  @IsOptional()
+  @IsIn(Object.values(StatusOcorrencia))
+  status?: StatusOcorrencia;
 
   @IsOptional()
   @Type(() => Number)
