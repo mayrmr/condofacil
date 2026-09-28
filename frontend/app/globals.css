@@ -630,11 +630,20 @@ button:disabled {
   white-space: nowrap;
 }
 
+/* A pagina de ocorrencias precisa de mais largura horizontal pro kanban
+   (varias colunas lado a lado) do que o resto do app, que fica centralizado
+   em ~920px. */
+main:has(> .ocorrencias-page) {
+  max-width: none;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
 /* ---------- Kanban (dashboard) ---------- */
 
 .kanban {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: start;
   overflow-x: auto;
   padding-bottom: 8px;
@@ -644,10 +653,16 @@ button:disabled {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 10px;
   min-height: 80px;
-  flex: 0 0 300px;
-  width: 300px;
+  flex: 0 0 260px;
+  width: 260px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.kanban .coluna.coluna-alvo {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
 }
 
 .kanban .coluna-header {
@@ -681,14 +696,22 @@ button:disabled {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px;
-  margin-bottom: 10px;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  padding: 10px;
+  margin-bottom: 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .kanban-card:hover {
   border-color: var(--primary);
   transform: translateY(-1px);
+}
+
+.kanban-card[draggable='true'] {
+  cursor: grab;
+}
+
+.kanban-card[draggable='true']:active {
+  cursor: grabbing;
 }
 
 .kanban-card .categoria-badge {

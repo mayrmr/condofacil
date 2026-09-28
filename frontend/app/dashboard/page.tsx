@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch, IconX } from '@/components/icons';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { tempoRelativo } from '@/lib/formatacao';
-import type { Bloco, Ocorrencia, PerfilFuncionarioOuGestor, Prioridade } from '@/lib/types';
+import { COR_STATUS, LABEL_STATUS, tempoRelativo } from '@/lib/formatacao';
+import { transicoesPermitidas } from '@/lib/state-machine';
+import type { Bloco, Ocorrencia, PerfilFuncionarioOuGestor, Prioridade, StatusOcorrencia } from '@/lib/types';
 
 const VISOES = [
   { chave: 'kanban', label: 'Kanban', icon: IconGrid },
@@ -16,8 +17,19 @@ const VISOES = [
 ] as const;
 
 type Visao = (typeof VISOES)[number]['chave'];
-type ColunaKanbanDto = { chave: string; label: string; itens: Ocorrencia[] };
-type ResultadoDashboard = Ocorrencia[] | Record<string, Ocorrencia[]> | ColunaKanbanDto[];
+type ResultadoDashboard = Ocorrencia[] | Record<string, Ocorrencia[]>;
+
+// Ordem do fluxo completo, do jeito que o quadro kanban mostra as colunas
+// (deve bater com ETAPAS_KANBAN em backend/src/usuarios/usuarios.service.ts).
+const ETAPAS_KANBAN: StatusOcorrencia[] = [
+  'ABERTURA',
+  'ANALISE',
+  'ATENDIMENTO',
+  'AGUARDA_MATERIAL',
+  'RESOLVIDA',
+  'AVALIACAO',
+  'CANCELAMENTO',
+];
 
 const CATEGORIAS = ['iluminacao', 'equipamento', 'vazamento', 'acessibilidade', 'seguranca', 'manutencao', 'outro'];
 const PRIORIDADES: Prioridade[] = ['BAIXA', 'MEDIA', 'ALTA', 'URGENTE'];
@@ -28,11 +40,16 @@ const PERIODOS = [
   { label: 'Tudo', dias: undefined },
 ];
 
+function tituloColuna(status: StatusOcorrencia): string {
+  return status === 'ABERTURA' ? 'Nova ocorrência' : LABEL_STATUS[status];
+}
+
 interface Filtros {
   categoria: string;
   blocoId: string;
   responsavelFuncionarioId: string;
   prioridade: string;
+  status: string;
   periodoDias: number | undefined;
 }
 
@@ -41,13 +58,40 @@ const FILTROS_PADRAO: Filtros = {
   blocoId: '',
   responsavelFuncionarioId: '',
   prioridade: '',
+  status: '',
   periodoDias: 30,
 };
 
-function CartaoKanban({ ocorrencia }: { ocorrencia: Ocorrencia }) {
+interface Arrasto {
+  id: string;
+  deStatus: StatusOcorrencia;
+  permitidos: StatusOcorrencia[];
+}
+
+function CartaoKanban({
+  ocorrencia,
+  arrastavel,
+  aoIniciarArrasto,
+  aoTerminarArrasto,
+}: {
+  ocorrencia: Ocorrencia;
+  arrastavel: boolean;
+  aoIniciarArrasto: () => void;
+  aoTerminarArrasto: () => void;
+}) {
   const urgente = ocorrencia.prioridade === 'URGENTE';
   return (
-    <a href={`/ocorrencias/${ocorrencia.id}`} className="kanban-card">
+    <a
+      href={`/ocorrencias/${ocorrencia.id}`}
+      className="kanban-card"
+      draggable={arrastavel}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', ocorrencia.id);
+        e.dataTransfer.effectAllowed = 'move';
+        aoIniciarArrasto();
+      }}
+      onDragEnd={aoTerminarArrasto}
+    >
       <span className={`categoria-badge${urgente ? ' urgente' : ''}`}>
         {urgente ? 'Urgente' : ocorrencia.categoria}
       </span>
@@ -62,26 +106,50 @@ function CartaoKanban({ ocorrencia }: { ocorrencia: Ocorrencia }) {
   );
 }
 
-function ColunaKanban({ titulo, itens, cor }: { titulo: string; itens: Ocorrencia[]; cor?: string }) {
+function ColunaKanban({
+  status,
+  itens,
+  arrasto,
+  aoIniciarArrasto,
+  aoTerminarArrasto,
+  aoSoltar,
+}: {
+  status: StatusOcorrencia;
+  itens: Ocorrencia[];
+  arrasto: Arrasto | null;
+  aoIniciarArrasto: (ocorrencia: Ocorrencia) => void;
+  aoTerminarArrasto: () => void;
+  aoSoltar: (statusDestino: StatusOcorrencia) => void;
+}) {
+  const alvoValido = Boolean(arrasto && arrasto.permitidos.includes(status));
   return (
-    <div className="coluna">
+    <div
+      className={`coluna${alvoValido ? ' coluna-alvo' : ''}`}
+      onDragOver={(e) => {
+        if (alvoValido) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        if (alvoValido) aoSoltar(status);
+      }}
+    >
       <div className="coluna-header">
-        {cor && <span className="coluna-dot" style={{ background: cor }} />}
-        <span className="coluna-titulo">{titulo}</span>
+        <span className="coluna-dot" style={{ background: COR_STATUS[status] }} />
+        <span className="coluna-titulo">{tituloColuna(status)}</span>
         <span className="coluna-count">{itens.length}</span>
       </div>
       {itens.map((o) => (
-        <CartaoKanban key={o.id} ocorrencia={o} />
+        <CartaoKanban
+          key={o.id}
+          ocorrencia={o}
+          arrastavel={arrasto === null || arrasto.id === o.id}
+          aoIniciarArrasto={() => aoIniciarArrasto(o)}
+          aoTerminarArrasto={aoTerminarArrasto}
+        />
       ))}
     </div>
   );
 }
-
-const COR_BUCKET: Record<string, string> = {
-  ABERTAS: 'var(--danger)',
-  EM_ANDAMENTO: 'var(--warning)',
-  CONCLUIDAS: 'var(--success)',
-};
 
 function FiltroSelect({
   valor,
@@ -122,6 +190,7 @@ function ConteudoDashboard() {
   const [busca, setBusca] = useState('');
   const [buscaAplicada, setBuscaAplicada] = useState('');
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_PADRAO);
+  const [arrasto, setArrasto] = useState<Arrasto | null>(null);
 
   useEffect(() => {
     if (perfil?.role === 'GESTOR') {
@@ -139,7 +208,7 @@ function ConteudoDashboard() {
     return () => clearTimeout(t);
   }, [busca]);
 
-  useEffect(() => {
+  const buscarDashboard = useCallback(() => {
     const rota = perfil?.role === 'GESTOR' ? '/gestor/dashboard' : '/funcionario/dashboard';
     const params = new URLSearchParams({ view: visao });
     if (buscaAplicada) params.set('q', buscaAplicada);
@@ -147,12 +216,16 @@ function ConteudoDashboard() {
     if (filtros.blocoId) params.set('blocoId', filtros.blocoId);
     if (filtros.responsavelFuncionarioId) params.set('responsavelFuncionarioId', filtros.responsavelFuncionarioId);
     if (filtros.prioridade) params.set('prioridade', filtros.prioridade);
+    if (filtros.status) params.set('status', filtros.status);
     if (filtros.periodoDias) params.set('periodoDias', String(filtros.periodoDias));
+    return api.get<ResultadoDashboard>(`${rota}?${params.toString()}`);
+  }, [visao, perfil, buscaAplicada, filtros]);
 
+  useEffect(() => {
     let cancelado = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- refetch ao trocar de aba/visao/filtro, padrao de data fetching em effect
     setCarregando(true);
-    api.get<ResultadoDashboard>(`${rota}?${params.toString()}`).then((r) => {
+    buscarDashboard().then((r) => {
       // Evita que uma resposta antiga (de um filtro ja trocado) sobrescreva
       // uma mais recente que tenha chegado primeiro.
       if (cancelado) return;
@@ -162,7 +235,7 @@ function ConteudoDashboard() {
     return () => {
       cancelado = true;
     };
-  }, [visao, perfil, buscaAplicada, filtros]);
+  }, [buscarDashboard]);
 
   const filtrosAtivos = useMemo(
     () =>
@@ -171,6 +244,7 @@ function ConteudoDashboard() {
           filtros.blocoId ||
           filtros.responsavelFuncionarioId ||
           filtros.prioridade ||
+          filtros.status ||
           filtros.periodoDias !== FILTROS_PADRAO.periodoDias,
       ),
     [filtros],
@@ -180,8 +254,34 @@ function ConteudoDashboard() {
     setFiltros((atual) => ({ ...atual, [chave]: FILTROS_PADRAO[chave] }));
   }
 
+  function iniciarArrasto(ocorrencia: Ocorrencia) {
+    if (!perfil?.role) return;
+    // Funcionario so pode mover ocorrencias atribuidas a ele mesmo (mesma
+    // regra de posse do backend, so pra nao oferecer um arrasto que o
+    // servidor vai rejeitar).
+    if (perfil.role === 'FUNCIONARIO' && ocorrencia.responsavelFuncionarioId !== perfil.id) {
+      setArrasto({ id: ocorrencia.id, deStatus: ocorrencia.statusAtual, permitidos: [] });
+      return;
+    }
+    const permitidos = transicoesPermitidas(ocorrencia.statusAtual, perfil.role);
+    setArrasto({ id: ocorrencia.id, deStatus: ocorrencia.statusAtual, permitidos });
+  }
+
+  async function soltarEm(statusDestino: StatusOcorrencia) {
+    const atual = arrasto;
+    setArrasto(null);
+    if (!atual || !atual.permitidos.includes(statusDestino)) return;
+    try {
+      await api.patch(`/ocorrencias/${atual.id}/status`, { status: statusDestino });
+      const atualizado = await buscarDashboard();
+      setDados(atualizado);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Não foi possível mover a ocorrência.');
+    }
+  }
+
   return (
-    <div>
+    <div className="ocorrencias-page">
       <div className="row-between">
         <h1>Ocorrências</h1>
       </div>
@@ -210,6 +310,20 @@ function ConteudoDashboard() {
           <IconFilter />
           Filtros
         </span>
+
+        <FiltroSelect
+          valor={filtros.status}
+          ativo={filtros.status !== ''}
+          aoMudar={(v) => setFiltros((f) => ({ ...f, status: v }))}
+          aoLimpar={() => limparFiltro('status')}
+        >
+          <option value="">Status: todos</option>
+          {ETAPAS_KANBAN.map((s) => (
+            <option key={s} value={s}>
+              Status: {LABEL_STATUS[s]}
+            </option>
+          ))}
+        </FiltroSelect>
 
         <FiltroSelect
           valor={filtros.prioridade}
@@ -302,12 +416,15 @@ function ConteudoDashboard() {
 
       {!carregando && visao === 'kanban' && (
         <div className="kanban">
-          {(dados as ColunaKanbanDto[]).map((coluna) => (
+          {ETAPAS_KANBAN.map((status) => (
             <ColunaKanban
-              key={coluna.chave}
-              titulo={coluna.label}
-              itens={coluna.itens}
-              cor={COR_BUCKET[coluna.chave]}
+              key={status}
+              status={status}
+              itens={(dados as Record<string, Ocorrencia[]>)[status] ?? []}
+              arrasto={arrasto}
+              aoIniciarArrasto={iniciarArrasto}
+              aoTerminarArrasto={() => setArrasto(null)}
+              aoSoltar={soltarEm}
             />
           ))}
         </div>
