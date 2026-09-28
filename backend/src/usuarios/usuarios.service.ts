@@ -3,21 +3,16 @@ import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role, StatusOcorrencia } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto.js';
-import { VISOES_DASHBOARD, type VisaoDashboard } from './dto/dashboard-query.dto.js';
+import type { DashboardQueryDto } from './dto/dashboard-query.dto.js';
 
-const VISOES_SOMENTE_GESTOR: VisaoDashboard[] = ['funcionarios', 'areas'];
-
-// Etapas do quadro kanban, na ordem do fluxo (secao 6 da especificacao).
-// EXCLUIDA fica de fora: e um cancelamento antes de analise, nao uma etapa
-// de trabalho. As colunas aparecem sempre, mesmo vazias.
-const ETAPAS_KANBAN: StatusOcorrencia[] = [
-  'ABERTURA',
-  'ANALISE',
-  'ATENDIMENTO',
-  'AGUARDA_MATERIAL',
-  'RESOLVIDA',
-  'AVALIACAO',
-  'CANCELAMENTO',
+// Colunas fixas do kanban de ocorrencias (secao 6 da especificacao, agrupada
+// em 3 baldes visiveis de uma vez — mesma estrutura do mockup de
+// referencia). EXCLUIDA fica de fora: e um cancelamento antes de analise,
+// nao uma etapa de trabalho. As colunas aparecem sempre, mesmo vazias.
+const BUCKETS_KANBAN: { chave: string; label: string; status: StatusOcorrencia[] }[] = [
+  { chave: 'ABERTAS', label: 'Abertas', status: ['ABERTURA', 'ANALISE'] },
+  { chave: 'EM_ANDAMENTO', label: 'Em andamento', status: ['ATENDIMENTO', 'AGUARDA_MATERIAL'] },
+  { chave: 'CONCLUIDAS', label: 'Concluídas', status: ['RESOLVIDA', 'AVALIACAO', 'CANCELAMENTO'] },
 ];
 
 function agruparPor<T, K extends string | number>(itens: T[], chave: (item: T) => K): Map<K, T[]> {
@@ -100,39 +95,77 @@ export class UsuariosService {
     });
   }
 
-  async dashboard(user: AuthUser, view: VisaoDashboard) {
-    if (user.role === Role.USUARIO || (VISOES_SOMENTE_GESTOR.includes(view) && user.role !== Role.GESTOR)) {
+  async dashboard(user: AuthUser, query: DashboardQueryDto) {
+    if (user.role === Role.USUARIO) {
       throw new ForbiddenException('Este dashboard nao esta disponivel para o seu perfil.');
     }
 
     const ocorrencias = await this.prisma.ocorrencia.findMany({
-      where: { predioId: { in: user.predioIds } },
+      where: {
+        predioId: { in: user.predioIds },
+        ...(query.q ? { titulo: { contains: query.q, mode: 'insensitive' } } : {}),
+        ...(query.categoria ? { categoria: query.categoria } : {}),
+        ...(query.blocoId ? { localizacaoTipo: 'BLOCO', localizacaoId: query.blocoId } : {}),
+        ...(query.responsavelFuncionarioId
+          ? { responsavelFuncionarioId: query.responsavelFuncionarioId }
+          : {}),
+        ...(query.prioridade ? { prioridade: query.prioridade } : {}),
+        ...(query.periodoDias
+          ? { criadoEm: { gte: new Date(Date.now() - query.periodoDias * 24 * 60 * 60 * 1000) } }
+          : {}),
+      },
       include: { usuario: { select: { nomeCompleto: true } } },
       orderBy: { criadoEm: 'desc' },
     });
 
-    switch (view) {
+    const nomesLocalizacao = await this.resolverNomesLocalizacao(user.predioIds);
+    const comLocalizacao = ocorrencias.map((o) => ({
+      ...o,
+      localizacaoNome: nomesLocalizacao.get(`${o.localizacaoTipo}:${o.localizacaoId}`) ?? null,
+    }));
+
+    switch (query.view) {
       case 'kanban': {
-        const agrupado = agruparPor(ocorrencias, (o) => o.statusAtual);
-        return Object.fromEntries(ETAPAS_KANBAN.map((etapa) => [etapa, agrupado.get(etapa) ?? []]));
+        const agrupado = agruparPor(comLocalizacao, (o) => o.statusAtual);
+        return BUCKETS_KANBAN.map((b) => ({
+          chave: b.chave,
+          label: b.label,
+          itens: b.status.flatMap((s) => agrupado.get(s) ?? []),
+        }));
       }
       case 'calendario':
         return Object.fromEntries(
-          agruparPor(ocorrencias, (o) => o.criadoEm.toISOString().slice(0, 10)),
+          agruparPor(comLocalizacao, (o) => o.criadoEm.toISOString().slice(0, 10)),
         );
-      case 'prioridades':
-        return Object.fromEntries(agruparPor(ocorrencias, (o) => o.prioridade ?? 'SEM_PRIORIDADE'));
-      case 'funcionarios':
-        return Object.fromEntries(
-          agruparPor(ocorrencias, (o) => o.responsavelFuncionarioId ?? 'SEM_RESPONSAVEL'),
-        );
-      case 'areas':
-        return Object.fromEntries(agruparPor(ocorrencias, (o) => `${o.localizacaoTipo}:${o.localizacaoId}`));
       case 'lista':
       default:
-        return ocorrencias;
+        return comLocalizacao;
     }
   }
 
-  readonly visoesDisponiveis = VISOES_DASHBOARD;
+  // Resolve o par (localizacaoTipo, localizacaoId) — sem FK declarada no
+  // schema (ver comentario no topo do schema.prisma) — em um nome legivel,
+  // para exibir nos cartoes do dashboard sem o cliente precisar cruzar
+  // varias listas.
+  private async resolverNomesLocalizacao(predioIds: string[]) {
+    const [blocos, areasSociais] = await Promise.all([
+      this.prisma.bloco.findMany({
+        where: { predioId: { in: predioIds } },
+        include: { apartamentos: true },
+      }),
+      this.prisma.areaSocial.findMany({ where: { predioId: { in: predioIds } } }),
+    ]);
+
+    const nomes = new Map<string, string>();
+    for (const bloco of blocos) {
+      nomes.set(`BLOCO:${bloco.id}`, bloco.nome);
+      for (const apartamento of bloco.apartamentos) {
+        nomes.set(`APARTAMENTO:${apartamento.id}`, `${bloco.nome} · apto ${apartamento.numero}`);
+      }
+    }
+    for (const area of areasSociais) {
+      nomes.set(`AREA_SOCIAL:${area.id}`, area.nome);
+    }
+    return nomes;
+  }
 }

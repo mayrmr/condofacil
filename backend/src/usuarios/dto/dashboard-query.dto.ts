@@ -1,17 +1,38 @@
-import { IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { Prioridade } from '../../generated/prisma/enums.js';
 
-export const VISOES_DASHBOARD = [
-  'kanban',
-  'calendario',
-  'lista',
-  'prioridades',
-  'funcionarios',
-  'areas',
-] as const;
+export const VISOES_DASHBOARD = ['kanban', 'calendario', 'lista'] as const;
 
 export type VisaoDashboard = (typeof VISOES_DASHBOARD)[number];
 
 export class DashboardQueryDto {
   @IsIn(VISOES_DASHBOARD)
   view!: VisaoDashboard;
+
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @IsString()
+  categoria?: string;
+
+  @IsOptional()
+  @IsUUID()
+  blocoId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  responsavelFuncionarioId?: string;
+
+  @IsOptional()
+  @IsIn(Object.values(Prioridade))
+  prioridade?: Prioridade;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  periodoDias?: number;
 }

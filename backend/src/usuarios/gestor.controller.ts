@@ -23,6 +23,6 @@ export class GestorController {
 
   @Get('dashboard')
   dashboard(@CurrentUser() user: AuthUser, @Query() query: DashboardQueryDto) {
-    return this.usuariosService.dashboard(user, query.view);
+    return this.usuariosService.dashboard(user, query);
   }
 }
