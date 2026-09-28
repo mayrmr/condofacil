@@ -116,6 +116,7 @@ model Bloco {
 
   predio       Predio        @relation(fields: [predioId], references: [id])
   apartamentos Apartamento[]
+  encomendas   Encomenda[]
 
   @@map("blocos")
 }
@@ -125,8 +126,9 @@ model Apartamento {
   blocoId String @map("bloco_id")
   numero  String
 
-  bloco    Bloco     @relation(fields: [blocoId], references: [id])
-  usuarios Usuario[]
+  bloco      Bloco       @relation(fields: [blocoId], references: [id])
+  usuarios   Usuario[]
+  encomendas Encomenda[]
 
   @@map("apartamentos")
 }
@@ -433,18 +435,28 @@ enum StatusEncomenda {
 // registradoPorId fica solto (sem @relation) porque quem registra a chegada
 // e sempre funcionario/gestor (portaria), nunca Usuario — mesma logica
 // polimorfica de Comentario.autorId, so que aqui e opcional.
+//
+// usuarioId e opcional: quando o destinatario nao tem cadastro na
+// plataforma (ou o funcionario nao encontrou o morador na busca), a
+// encomenda usa os campos manuais (nomeDestinatario/blocoId/apartamentoId)
+// no lugar do vinculo com Usuario.
 model Encomenda {
-  id              String          @id @default(uuid())
-  predioId        String          @map("predio_id")
-  usuarioId       String          @map("usuario_id")
-  descricao       String?
-  status          StatusEncomenda @default(AGUARDANDO_RETIRADA)
-  chegadaEm       DateTime        @default(now()) @map("chegada_em")
-  retiradaEm      DateTime?       @map("retirada_em")
-  registradoPorId String?         @map("registrado_por_id")
+  id               String          @id @default(uuid())
+  predioId         String          @map("predio_id")
+  usuarioId        String?         @map("usuario_id")
+  nomeDestinatario String?         @map("nome_destinatario")
+  blocoId          String?         @map("bloco_id")
+  apartamentoId    String?         @map("apartamento_id")
+  descricao        String?
+  status           StatusEncomenda @default(AGUARDANDO_RETIRADA)
+  chegadaEm        DateTime        @default(now()) @map("chegada_em")
+  retiradaEm       DateTime?       @map("retirada_em")
+  registradoPorId  String?         @map("registrado_por_id")
 
-  predio  Predio  @relation(fields: [predioId], references: [id])
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  predio      Predio       @relation(fields: [predioId], references: [id])
+  usuario     Usuario?     @relation(fields: [usuarioId], references: [id])
+  bloco       Bloco?       @relation(fields: [blocoId], references: [id])
+  apartamento Apartamento? @relation(fields: [apartamentoId], references: [id])
 
   @@index([predioId])
   @@index([usuarioId])

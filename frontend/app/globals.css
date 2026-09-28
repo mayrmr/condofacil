@@ -718,6 +718,66 @@ button:disabled {
   font-size: 0.85rem;
 }
 
+/* ---------- Destinatario de encomenda (combobox) ---------- */
+
+.destinatario-selecionado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.9rem;
+}
+
+.destinatario-selecionado button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.destinatario-sugestoes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin-top: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(22, 36, 29, 0.14);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.destinatario-sugestoes button {
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--foreground);
+  width: 100%;
+}
+
+.destinatario-sugestoes button:hover {
+  background: var(--surface);
+}
+
 @media (max-width: 640px) {
   .areas-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

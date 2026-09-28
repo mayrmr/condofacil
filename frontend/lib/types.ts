@@ -131,6 +131,7 @@ export interface PerfilUsuario {
   telefone: string | null;
   fotoUrl: string | null;
   predio?: Predio;
+  apartamento?: Apartamento | null;
 }
 
 export interface PerfilFuncionarioOuGestor {
@@ -174,9 +175,15 @@ export interface Visitante {
 export interface Encomenda {
   id: string;
   predioId: string;
-  usuarioId: string;
+  usuarioId: string | null;
+  nomeDestinatario: string | null;
+  blocoId: string | null;
+  apartamentoId: string | null;
   descricao: string | null;
   status: StatusEncomenda;
   chegadaEm: string;
   retiradaEm: string | null;
+  usuario?: { nomeCompleto: string } | null;
+  bloco?: { nome: string } | null;
+  apartamento?: { numero: string } | null;
 }
