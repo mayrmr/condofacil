@@ -633,7 +633,10 @@ button:disabled {
 /* A pagina de ocorrencias precisa de mais largura horizontal pro kanban
    (varias colunas lado a lado) do que o resto do app, que fica centralizado
    em ~920px. */
-main:has(> .ocorrencias-page) {
+/* Sem ">" (descendente, nao filho direto): RequireAuth embrulha a pagina
+   num <div class="page-transition">, entao .ocorrencias-page fica um nivel
+   abaixo de main, nao filho direto. */
+main:has(.ocorrencias-page) {
   max-width: none;
   padding-left: 16px;
   padding-right: 16px;
