@@ -832,11 +832,11 @@ button:disabled {
 
 .calendario-coluna-calendario {
   flex: 1 1 260px;
-  max-width: 320px;
+  max-width: 440px;
 }
 
 .calendario-coluna-detalhe {
-  flex: 1 1 200px;
+  flex: 0 1 220px;
   min-width: 190px;
   padding-top: 4px;
 }
