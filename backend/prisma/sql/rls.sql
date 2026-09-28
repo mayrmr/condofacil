@@ -48,7 +48,6 @@ alter table public.usuarios enable row level security;
 alter table public.comentarios enable row level security;
 alter table public.imagens enable row level security;
 alter table public.historico_status enable row level security;
-alter table public.faturas enable row level security;
 alter table public.areas_sociais enable row level security;
 alter table public.reservas enable row level security;
 alter table public.visitantes enable row level security;
@@ -65,7 +64,6 @@ grant select on public.usuarios to authenticated;
 grant select, insert, update, delete on public.comentarios to authenticated;
 grant select, insert on public.imagens to authenticated;
 grant select on public.historico_status to authenticated;
-grant select, update on public.faturas to authenticated;
 grant select, insert, update on public.areas_sociais to authenticated;
 grant select, insert, update on public.reservas to authenticated;
 grant select, insert, delete on public.visitantes to authenticated;
@@ -79,7 +77,6 @@ drop policy if exists usuarios_isolamento_predio on public.usuarios;
 drop policy if exists comentarios_isolamento_predio on public.comentarios;
 drop policy if exists imagens_isolamento_predio on public.imagens;
 drop policy if exists historico_status_isolamento_predio on public.historico_status;
-drop policy if exists faturas_isolamento_predio on public.faturas;
 drop policy if exists areas_sociais_isolamento_predio on public.areas_sociais;
 drop policy if exists reservas_isolamento_predio on public.reservas;
 drop policy if exists visitantes_isolamento_predio on public.visitantes;
@@ -125,11 +122,7 @@ create policy historico_status_isolamento_predio on public.historico_status
   for select
   using (exists (select 1 from public.ocorrencias o where o.id = ocorrencia_id and o.predio_id in (select predios_do_usuario_autenticado())));
 
--- Modulos adicionais (Financeiro, Reservas, Visitantes, Encomendas).
-create policy faturas_isolamento_predio on public.faturas
-  for all
-  using (predio_id in (select predios_do_usuario_autenticado()))
-  with check (predio_id in (select predios_do_usuario_autenticado()));
+-- Modulos adicionais (Reservas, Visitantes, Encomendas).
 
 -- AREAS_SOCIAIS: usada tanto para localizacao de ocorrencias/avisos quanto
 -- como lista de areas reservaveis (ver Reserva.area).

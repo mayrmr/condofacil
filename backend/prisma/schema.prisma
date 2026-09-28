@@ -102,7 +102,6 @@ model Predio {
   gestores     GestorPredio[]
   ocorrencias  Ocorrencia[]
   avisos       Aviso[]
-  faturas      Fatura[]
   reservas     Reserva[]
   visitantes   Visitante[]
   encomendas   Encomenda[]
@@ -162,7 +161,6 @@ model Usuario {
   predio      Predio       @relation(fields: [predioId], references: [id])
   apartamento Apartamento? @relation(fields: [apartamentoId], references: [id])
   ocorrencias Ocorrencia[]
-  faturas     Fatura[]
   reservas    Reserva[]
   visitantes  Visitante[]
   encomendas  Encomenda[]
@@ -372,34 +370,9 @@ model Convite {
 
 // ---------------------------------------------------------------------
 // Modulos adicionais trazidos do design de referencia (app de condominio):
-// Financeiro, Reservas, Visitantes e Encomendas. Seguem o mesmo
-// padrao de isolamento por predio_id dos modulos originais.
+// Reservas, Visitantes e Encomendas. Seguem o mesmo padrao de isolamento
+// por predio_id dos modulos originais.
 // ---------------------------------------------------------------------
-
-enum StatusFatura {
-  EM_ABERTO
-  PAGA
-  ATRASADA
-}
-
-model Fatura {
-  id            String       @id @default(uuid())
-  predioId      String       @map("predio_id")
-  usuarioId     String       @map("usuario_id")
-  competencia   String
-  valorCentavos Int          @map("valor_centavos")
-  vencimento    DateTime
-  status        StatusFatura @default(EM_ABERTO)
-  pagoEm        DateTime?    @map("pago_em")
-  criadoEm      DateTime     @default(now()) @map("criado_em")
-
-  predio  Predio  @relation(fields: [predioId], references: [id])
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-
-  @@index([predioId])
-  @@index([usuarioId])
-  @@map("faturas")
-}
 
 enum StatusReserva {
   CONFIRMADA

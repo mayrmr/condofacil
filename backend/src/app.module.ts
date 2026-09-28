@@ -5,7 +5,6 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AvisosModule } from './avisos/avisos.module.js';
 import { EncomendasModule } from './encomendas/encomendas.module.js';
-import { FinanceiroModule } from './financeiro/financeiro.module.js';
 import { NotificacoesModule } from './notificacoes/notificacoes.module.js';
 import { OcorrenciasModule } from './ocorrencias/ocorrencias.module.js';
 import { PrediosModule } from './predios/predios.module.js';
@@ -28,7 +27,6 @@ import { VisitantesModule } from './visitantes/visitantes.module.js';
     OcorrenciasModule,
     AvisosModule,
     NotificacoesModule,
-    FinanceiroModule,
     ReservasModule,
     VisitantesModule,
     EncomendasModule,
