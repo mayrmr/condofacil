@@ -93,7 +93,11 @@ export class UsuariosService {
       case Role.USUARIO:
         return this.prisma.usuario.update({
           where: { id: user.perfilId },
-          data: { ...dadosComuns, ...(dto.apartamentoId ? { apartamentoId: dto.apartamentoId } : {}) },
+          data: {
+            ...dadosComuns,
+            ...(dto.apartamentoId ? { apartamentoId: dto.apartamentoId } : {}),
+            ...(dto.tipoVinculo ? { tipoVinculo: dto.tipoVinculo } : {}),
+          },
         });
       case Role.FUNCIONARIO:
         return this.prisma.funcionario.update({ where: { id: user.perfilId }, data: dadosComuns });
@@ -105,7 +109,7 @@ export class UsuariosService {
   async listarUsuarios(gestor: AuthUser) {
     return this.prisma.usuario.findMany({
       where: { predioId: { in: gestor.predioIds } },
-      include: { predio: true, apartamento: true },
+      include: { predio: true, apartamento: { include: { bloco: true } } },
       orderBy: { nomeCompleto: 'asc' },
     });
   }

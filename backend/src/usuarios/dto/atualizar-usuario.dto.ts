@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { TipoVinculo } from '../../generated/prisma/enums.js';
 
 export class AtualizarUsuarioDto {
   @IsOptional()
@@ -18,4 +19,8 @@ export class AtualizarUsuarioDto {
   @IsOptional()
   @IsUUID()
   apartamentoId?: string;
+
+  @IsOptional()
+  @IsIn(Object.values(TipoVinculo))
+  tipoVinculo?: TipoVinculo;
 }

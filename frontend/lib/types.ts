@@ -1,4 +1,5 @@
 export type Role = 'USUARIO' | 'FUNCIONARIO' | 'GESTOR';
+export type TipoVinculo = 'PROPRIETARIO' | 'INQUILINO';
 
 export type StatusOcorrencia =
   | 'ABERTURA'
@@ -104,6 +105,7 @@ export interface Apartamento {
   id: string;
   blocoId: string;
   numero: string;
+  bloco?: { id: string; nome: string };
 }
 
 export interface Bloco {
@@ -136,6 +138,7 @@ export interface PerfilUsuario {
   fotoUrl: string | null;
   predio?: Predio;
   apartamento?: Apartamento | null;
+  tipoVinculo: TipoVinculo;
 }
 
 export interface PerfilFuncionarioOuGestor {

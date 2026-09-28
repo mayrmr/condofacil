@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/encomendas', label: 'Encomendas', icon: IconPackage },
   { href: '/dashboard', label: 'Ocorrências', icon: IconGrid, roles: ['FUNCIONARIO', 'GESTOR'] },
   { href: '/predio/estrutura', label: 'Estrutura do prédio', icon: IconBuilding, roles: ['GESTOR'] },
+  { href: '/gestor/usuarios', label: 'Usuários', icon: IconUsers, roles: ['GESTOR'] },
   { href: '/gestor/convidar', label: 'Convidar', icon: IconUserPlus, roles: ['GESTOR'] },
   { href: '/area-usuario', label: 'Área do usuário', icon: IconUser },
 ];
