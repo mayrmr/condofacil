@@ -18,7 +18,6 @@ export type DestinatarioAviso = 'TODOS' | 'BLOCO';
 
 export type StatusAviso = 'ATIVO' | 'ENCERRADO';
 
-export type StatusFatura = 'EM_ABERTO' | 'PAGA' | 'ATRASADA';
 export type StatusReserva = 'CONFIRMADA' | 'CANCELADA';
 export type StatusVisitante = 'AUTORIZADO' | 'EXPIRADO';
 export type StatusEncomenda = 'AGUARDANDO_RETIRADA' | 'RETIRADA';
@@ -146,18 +145,6 @@ export interface PerfilFuncionarioOuGestor {
 }
 
 export type Perfil = (PerfilUsuario | PerfilFuncionarioOuGestor) & { role?: Role };
-
-export interface Fatura {
-  id: string;
-  predioId: string;
-  usuarioId: string;
-  competencia: string;
-  valorCentavos: number;
-  vencimento: string;
-  status: StatusFatura;
-  pagoEm: string | null;
-  criadoEm: string;
-}
 
 export interface Reserva {
   id: string;

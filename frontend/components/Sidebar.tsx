@@ -10,7 +10,6 @@ import {
   IconBuilding,
   IconCalendar,
   IconClipboard,
-  IconCreditCard,
   IconGrid,
   IconHome,
   IconLogOut,
@@ -31,7 +30,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Início', icon: IconHome },
   { href: '/minhas-ocorrencias', label: 'Minhas ocorrências', icon: IconClipboard, roles: ['USUARIO'] },
   { href: '/avisos', label: 'Avisos', icon: IconBell },
-  { href: '/financeiro', label: 'Financeiro', icon: IconCreditCard, roles: ['USUARIO', 'GESTOR'] },
   { href: '/reservas', label: 'Reservas', icon: IconCalendar },
   { href: '/visitantes', label: 'Visitantes', icon: IconUsers, roles: ['USUARIO'] },
   { href: '/encomendas', label: 'Encomendas', icon: IconPackage },
@@ -45,9 +43,9 @@ const NAV_ITEMS: NavItem[] = [
 // ao mockup de referencia). O resto das secoes fica acessivel a partir da
 // pagina "Área do usuário" (ver app/area-usuario/page.tsx).
 export const ITENS_BOTTOM_NAV: Record<Role, string[]> = {
-  USUARIO: ['/', '/avisos', '/financeiro', '/reservas', '/area-usuario'],
+  USUARIO: ['/', '/avisos', '/reservas', '/area-usuario'],
   FUNCIONARIO: ['/', '/avisos', '/dashboard', '/encomendas', '/area-usuario'],
-  GESTOR: ['/', '/avisos', '/dashboard', '/financeiro', '/area-usuario'],
+  GESTOR: ['/', '/avisos', '/dashboard', '/area-usuario'],
 };
 
 export function iniciais(nome: string): string {

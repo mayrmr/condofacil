@@ -44,8 +44,8 @@ export default function LoginPage() {
           <div className="login-brand-copy">
             <p className="login-brand-headline">Seu condomínio, na palma da sua mão.</p>
             <p>
-              Financeiro, reservas, avisos e ocorrências — acompanhe e resolva tudo sem precisar ir
-              até a portaria.
+              Reservas, avisos e ocorrências — acompanhe e resolva tudo sem precisar ir até a
+              portaria.
             </p>
           </div>
 
