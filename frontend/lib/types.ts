@@ -139,6 +139,7 @@ export interface PerfilUsuario {
   predio?: Predio;
   apartamento?: Apartamento | null;
   tipoVinculo: TipoVinculo;
+  ativo?: boolean;
 }
 
 export interface PerfilFuncionarioOuGestor {
@@ -150,6 +151,7 @@ export interface PerfilFuncionarioOuGestor {
   fotoUrl: string | null;
   area?: string;
   predios: { predio: Predio }[];
+  ativo?: boolean;
 }
 
 export type Perfil = (PerfilUsuario | PerfilFuncionarioOuGestor) & { role?: Role };

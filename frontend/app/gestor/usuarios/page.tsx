@@ -1,21 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
 import { IconSearch } from '@/components/icons';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import type { PerfilFuncionarioOuGestor, PerfilUsuario } from '@/lib/types';
 
 type TipoLinha = 'FUNCIONARIO' | 'PROPRIETARIO' | 'INQUILINO';
 
 interface LinhaUsuario {
   id: string;
+  rota: 'usuarios' | 'funcionarios';
   nomeCompleto: string;
   email: string;
   telefone: string | null;
   tipo: TipoLinha;
   localizacao: string | null;
+  ativo: boolean;
 }
 
 const LABEL_TIPO: Record<TipoLinha, string> = {
@@ -44,37 +46,62 @@ function ConteudoUsuarios() {
   const [busca, setBusca] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<TipoLinha | ''>('');
 
-  useEffect(() => {
-    async function carregar() {
-      const [usuarios, funcionarios] = await Promise.all([
-        api.get<PerfilUsuario[]>('/gestor/usuarios'),
-        api.get<PerfilFuncionarioOuGestor[]>('/gestor/funcionarios'),
-      ]);
+  const carregar = useCallback(async () => {
+    const [usuarios, funcionarios] = await Promise.all([
+      api.get<PerfilUsuario[]>('/gestor/usuarios'),
+      api.get<PerfilFuncionarioOuGestor[]>('/gestor/funcionarios'),
+    ]);
 
-      const linhasUsuarios: LinhaUsuario[] = usuarios.map((u) => ({
-        id: u.id,
-        nomeCompleto: u.nomeCompleto,
-        email: u.email,
-        telefone: u.telefone,
-        tipo: u.tipoVinculo,
-        localizacao: u.apartamento
-          ? `${u.apartamento.bloco?.nome ?? 'Bloco'} · apto ${u.apartamento.numero}`
-          : null,
-      }));
-      const linhasFuncionarios: LinhaUsuario[] = funcionarios.map((f) => ({
-        id: f.id,
-        nomeCompleto: f.nomeCompleto,
-        email: f.email,
-        telefone: f.telefone,
-        tipo: 'FUNCIONARIO',
-        localizacao: f.area ?? null,
-      }));
+    const linhasUsuarios: LinhaUsuario[] = usuarios.map((u) => ({
+      id: u.id,
+      rota: 'usuarios',
+      nomeCompleto: u.nomeCompleto,
+      email: u.email,
+      telefone: u.telefone,
+      tipo: u.tipoVinculo,
+      localizacao: u.apartamento
+        ? `${u.apartamento.bloco?.nome ?? 'Bloco'} · apto ${u.apartamento.numero}`
+        : null,
+      ativo: u.ativo ?? true,
+    }));
+    const linhasFuncionarios: LinhaUsuario[] = funcionarios.map((f) => ({
+      id: f.id,
+      rota: 'funcionarios',
+      nomeCompleto: f.nomeCompleto,
+      email: f.email,
+      telefone: f.telefone,
+      tipo: 'FUNCIONARIO',
+      localizacao: f.area ?? null,
+      ativo: f.ativo ?? true,
+    }));
 
-      setLinhas([...linhasFuncionarios, ...linhasUsuarios].sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto)));
-      setCarregando(false);
-    }
-    carregar();
+    setLinhas([...linhasFuncionarios, ...linhasUsuarios].sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto)));
+    setCarregando(false);
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- busca inicial ao montar, padrao de data fetching em effect
+    carregar();
+  }, [carregar]);
+
+  async function handleBloqueio(linha: LinhaUsuario) {
+    try {
+      await api.patch(`/gestor/${linha.rota}/${linha.id}/bloqueio`, { ativo: !linha.ativo });
+      await carregar();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Não foi possível atualizar o bloqueio.');
+    }
+  }
+
+  async function handleExcluir(linha: LinhaUsuario) {
+    if (!confirm(`Excluir "${linha.nomeCompleto}" permanentemente?`)) return;
+    try {
+      await api.delete(`/gestor/${linha.rota}/${linha.id}`);
+      await carregar();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Não foi possível excluir.');
+    }
+  }
 
   const linhasFiltradas = useMemo(() => {
     const termo = normalizar(busca);
@@ -129,6 +156,13 @@ function ConteudoUsuarios() {
                 >
                   {LABEL_TIPO[l.tipo]}
                 </span>
+                {!l.ativo && <span className="badge badge-CANCELAMENTO">Bloqueado</span>}
+                <button type="button" onClick={() => handleBloqueio(l)}>
+                  {l.ativo ? 'Bloquear' : 'Desbloquear'}
+                </button>
+                <button type="button" className="btn-danger" onClick={() => handleExcluir(l)}>
+                  Excluir
+                </button>
               </div>
             </div>
           ))}

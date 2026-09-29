@@ -171,6 +171,7 @@ model Usuario {
   telefone      String?
   tipoVinculo   TipoVinculo @default(PROPRIETARIO) @map("tipo_vinculo")
   fotoUrl       String?     @map("foto_url")
+  ativo         Boolean     @default(true)
   criadoEm      DateTime    @default(now()) @map("criado_em")
 
   predio      Predio       @relation(fields: [predioId], references: [id])
@@ -192,6 +193,7 @@ model Funcionario {
   telefone     String?
   fotoUrl      String?  @map("foto_url")
   area         String
+  ativo        Boolean  @default(true)
   criadoEm     DateTime @default(now()) @map("criado_em")
 
   predios     FuncionarioPredio[]

@@ -1,7 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role, StatusOcorrencia } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { SupabaseService } from '../supabase/supabase.service.js';
 import type { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto.js';
 import type { DashboardQueryDto } from './dto/dashboard-query.dto.js';
 
@@ -54,7 +55,10 @@ function agruparPor<T, K extends string | number>(itens: T[], chave: (item: T) =
 
 @Injectable()
 export class UsuariosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly supabase: SupabaseService,
+  ) {}
 
   async me(user: AuthUser) {
     switch (user.role) {
@@ -120,6 +124,66 @@ export class UsuariosService {
       include: { predios: { include: { predio: true } } },
       orderBy: { nomeCompleto: 'asc' },
     });
+  }
+
+  async bloquearUsuario(gestor: AuthUser, usuarioId: string, ativo: boolean) {
+    const usuario = await this.buscarUsuarioDoGestorOuFalhar(gestor, usuarioId);
+    return this.prisma.usuario.update({ where: { id: usuario.id }, data: { ativo } });
+  }
+
+  async excluirUsuario(gestor: AuthUser, usuarioId: string) {
+    const usuario = await this.buscarUsuarioDoGestorOuFalhar(gestor, usuarioId);
+    const [ocorrencias, reservas, visitantes, encomendas] = await Promise.all([
+      this.prisma.ocorrencia.count({ where: { criadoPorUsuarioId: usuario.id } }),
+      this.prisma.reserva.count({ where: { usuarioId: usuario.id } }),
+      this.prisma.visitante.count({ where: { usuarioId: usuario.id } }),
+      this.prisma.encomenda.count({ where: { usuarioId: usuario.id } }),
+    ]);
+    if (ocorrencias > 0 || reservas > 0 || visitantes > 0 || encomendas > 0) {
+      throw new ConflictException(
+        'Nao e possivel excluir: este usuario possui historico registrado. Bloqueie o acesso em vez disso.',
+      );
+    }
+    await this.prisma.usuario.delete({ where: { id: usuario.id } });
+    await this.supabase.admin.auth.admin.deleteUser(usuario.authUserId);
+  }
+
+  async bloquearFuncionario(gestor: AuthUser, funcionarioId: string, ativo: boolean) {
+    const funcionario = await this.buscarFuncionarioDoGestorOuFalhar(gestor, funcionarioId);
+    return this.prisma.funcionario.update({ where: { id: funcionario.id }, data: { ativo } });
+  }
+
+  async excluirFuncionario(gestor: AuthUser, funcionarioId: string) {
+    const funcionario = await this.buscarFuncionarioDoGestorOuFalhar(gestor, funcionarioId);
+    const ocorrencias = await this.prisma.ocorrencia.count({
+      where: { responsavelFuncionarioId: funcionario.id },
+    });
+    if (ocorrencias > 0) {
+      throw new ConflictException(
+        'Nao e possivel excluir: este funcionario possui ocorrencias atribuidas. Bloqueie o acesso em vez disso.',
+      );
+    }
+    await this.prisma.funcionario.delete({ where: { id: funcionario.id } });
+    await this.supabase.admin.auth.admin.deleteUser(funcionario.authUserId);
+  }
+
+  private async buscarUsuarioDoGestorOuFalhar(gestor: AuthUser, usuarioId: string) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+    if (!usuario || !gestor.predioIds.includes(usuario.predioId)) {
+      throw new NotFoundException('Usuario nao encontrado neste predio.');
+    }
+    return usuario;
+  }
+
+  private async buscarFuncionarioDoGestorOuFalhar(gestor: AuthUser, funcionarioId: string) {
+    const funcionario = await this.prisma.funcionario.findUnique({
+      where: { id: funcionarioId },
+      include: { predios: true },
+    });
+    if (!funcionario || !funcionario.predios.some((p) => gestor.predioIds.includes(p.predioId))) {
+      throw new NotFoundException('Funcionario nao encontrado neste predio.');
+    }
+    return funcionario;
   }
 
   // periodo determina so a janela do "total de ocorrencias" (criadas no

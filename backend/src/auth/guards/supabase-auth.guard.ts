@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
   type CanActivate,
@@ -59,6 +60,9 @@ export class SupabaseAuthGuard implements CanActivate {
   private async resolveAuthUser(authUserId: string, email: string): Promise<AuthUser | null> {
     const usuario = await this.prisma.usuario.findUnique({ where: { authUserId } });
     if (usuario) {
+      if (!usuario.ativo) {
+        throw new ForbiddenException('Sua conta foi bloqueada pelo gestor.');
+      }
       return {
         authUserId,
         email,
@@ -74,6 +78,9 @@ export class SupabaseAuthGuard implements CanActivate {
       include: { predios: true },
     });
     if (funcionario) {
+      if (!funcionario.ativo) {
+        throw new ForbiddenException('Sua conta foi bloqueada pelo gestor.');
+      }
       return {
         authUserId,
         email,
