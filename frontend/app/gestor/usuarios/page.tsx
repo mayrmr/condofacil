@@ -87,14 +87,15 @@ function ConteudoUsuarios() {
 
   return (
     <div className="stack">
-      <PageTopBar title="Usuários" />
-      <p className="muted">Funcionários, proprietários e inquilinos vinculados ao prédio.</p>
-
-      <div className="dashboard-toolbar">
+      <PageTopBar title="Usuários">
         <label className="dashboard-busca">
           <IconSearch />
           <input placeholder="Buscar por nome ou e-mail..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </label>
+      </PageTopBar>
+      <p className="muted">Funcionários, proprietários e inquilinos vinculados ao prédio.</p>
+
+      <div className="dashboard-toolbar">
         <div className="tabs">
           {FILTROS_TIPO.map((f) => (
             <button

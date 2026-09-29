@@ -173,18 +173,16 @@ function ListaAvisos() {
   return (
     <div className="stack">
       <PageTopBar title="Avisos">
+        <label className="dashboard-busca">
+          <IconSearch />
+          <input placeholder="Buscar aviso..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </label>
         {perfil?.role === 'GESTOR' && (
           <Link href="/avisos/novo" className="btn btn-primary">
             + Novo aviso
           </Link>
         )}
       </PageTopBar>
-      <div>
-        <label className="dashboard-busca">
-          <IconSearch />
-          <input placeholder="Buscar aviso..." value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </label>
-      </div>
       {carregando && <p className="muted">Carregando...</p>}
       {!carregando && avisos.length === 0 && <p className="muted">Nenhum aviso publicado ainda.</p>}
       {!carregando && avisos.length > 0 && avisosFiltrados.length === 0 && (

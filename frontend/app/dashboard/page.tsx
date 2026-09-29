@@ -6,7 +6,15 @@ import { OcorrenciaCard } from '@/components/OcorrenciaCard';
 import { OcorrenciaModal } from '@/components/OcorrenciaModal';
 import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
-import { IconCalendar, IconFilter, IconGrid, IconList, IconSearch } from '@/components/icons';
+import {
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight,
+  IconFilter,
+  IconGrid,
+  IconList,
+  IconSearch,
+} from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { COR_STATUS, LABEL_CATEGORIA, LABEL_STATUS, tempoRelativo } from '@/lib/formatacao';
@@ -45,6 +53,138 @@ const PERIODOS = [
 
 function tituloColuna(status: StatusOcorrencia): string {
   return status === 'ABERTURA' ? 'Nova ocorrência' : LABEL_STATUS[status];
+}
+
+const DIAS_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+// Celulas da grade sao Date locais de verdade (sem dado vindo do servidor
+// envolvido), entao os getters locais aqui estao corretos — mesma cautela de
+// fuso horario documentada em reservas/page.tsx (chaveDiaLocal). A chave
+// resultante e comparada contra "dados", que o backend ja agrupa por
+// "AAAA-MM-DD" a partir de criadoEm em UTC.
+function chaveDiaLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatarChaveDia(chave: string): string {
+  const [ano, mes, dia] = chave.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+function CalendarioOcorrencias({
+  dados,
+  aoAbrirOcorrencia,
+}: {
+  dados: Record<string, Ocorrencia[]>;
+  aoAbrirOcorrencia: (id: string) => void;
+}) {
+  const [mesRef, setMesRef] = useState(() => {
+    const hoje = new Date();
+    return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  });
+  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
+
+  const celulas = useMemo(() => {
+    const primeiroDia = new Date(mesRef.getFullYear(), mesRef.getMonth(), 1);
+    const ultimoDia = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0);
+    const antes = primeiroDia.getDay();
+    const dias: (Date | null)[] = Array.from({ length: antes }, () => null);
+    for (let n = 1; n <= ultimoDia.getDate(); n++) {
+      dias.push(new Date(mesRef.getFullYear(), mesRef.getMonth(), n));
+    }
+    return dias;
+  }, [mesRef]);
+
+  const hojeChave = chaveDiaLocal(new Date());
+  const ocorrenciasDoDiaSelecionado = diaSelecionado ? (dados[diaSelecionado] ?? []) : [];
+
+  function mudarMes(delta: number) {
+    setDiaSelecionado(null);
+    setMesRef((atual) => new Date(atual.getFullYear(), atual.getMonth() + delta, 1));
+  }
+
+  return (
+    <div className="card">
+      <h2>Calendário de ocorrências</h2>
+      <div className="calendario-split">
+        <div className="calendario-coluna-calendario">
+          <div className="calendario-topo">
+            <div className="calendario-nav">
+              <button type="button" onClick={() => mudarMes(-1)} aria-label="Mês anterior">
+                <IconChevronLeft width={14} height={14} />
+              </button>
+              <strong>{mesRef.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</strong>
+              <button type="button" onClick={() => mudarMes(1)} aria-label="Próximo mês">
+                <IconChevronRight width={14} height={14} />
+              </button>
+            </div>
+          </div>
+
+          <div className="calendario-grade">
+            {DIAS_SEMANA.map((d, i) => (
+              <div key={i} className="calendario-dia-semana">
+                {d}
+              </div>
+            ))}
+            {celulas.map((data, i) => {
+              if (!data) return <div key={`vazio-${i}`} className="calendario-dia calendario-dia-vazio" />;
+              const chave = chaveDiaLocal(data);
+              const ocorrenciasDoDia = dados[chave] ?? [];
+              const ocupado = ocorrenciasDoDia.length > 0;
+              const urgente = ocorrenciasDoDia.some((o) => o.prioridade === 'URGENTE');
+              return (
+                <button
+                  key={chave}
+                  type="button"
+                  className={`calendario-dia${ocupado ? (urgente ? ' calendario-dia-pendente' : ' calendario-dia-ocupado') : ''}${chave === hojeChave ? ' calendario-dia-hoje' : ''}${chave === diaSelecionado ? ' calendario-dia-selecionado' : ''}`}
+                  disabled={!ocupado}
+                  onClick={() => setDiaSelecionado((atual) => (atual === chave ? null : chave))}
+                >
+                  {data.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="calendario-coluna-detalhe">
+          <div className="calendario-legenda">
+            <span>
+              <i className="calendario-legenda-dot calendario-dia-ocupado" /> Com ocorrências
+            </span>
+            <span>
+              <i className="calendario-legenda-dot calendario-dia-pendente" /> Com urgente
+            </span>
+          </div>
+
+          {diaSelecionado && ocorrenciasDoDiaSelecionado.length > 0 ? (
+            <div className="calendario-detalhe-dia">
+              <strong>{formatarChaveDia(diaSelecionado)}</strong>
+              <div className="stack" style={{ marginTop: 8 }}>
+                {ocorrenciasDoDiaSelecionado.map((o) => (
+                  <a
+                    key={o.id}
+                    href={`/ocorrencias/${o.id}`}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                      e.preventDefault();
+                      aoAbrirOcorrencia(o.id);
+                    }}
+                  >
+                    {o.titulo}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="calendario-dica" style={{ marginTop: 14 }}>
+              <p className="muted">Clique num dia com ocorrências para ver os detalhes.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface Filtros {
@@ -299,9 +439,7 @@ function ConteudoDashboard() {
 
   return (
     <div className="ocorrencias-page">
-      <PageTopBar title="Ocorrências" />
-
-      <div className="dashboard-toolbar">
+      <PageTopBar title="Ocorrências">
         <label className="dashboard-busca">
           <IconSearch />
           <input
@@ -310,6 +448,9 @@ function ConteudoDashboard() {
             onChange={(e) => setBusca(e.target.value)}
           />
         </label>
+      </PageTopBar>
+
+      <div className="dashboard-toolbar">
         <div className="tabs">
           {VISOES.map(({ chave, label, icon: Icon }) => (
             <button key={chave} className={chave === visao ? 'ativo' : ''} onClick={() => setVisao(chave)}>
@@ -463,33 +604,10 @@ function ConteudoDashboard() {
       )}
 
       {!carregando && dadosVisao === visao && visao === 'calendario' && (
-        <div className="stack">
-          {Object.entries(dados as Record<string, Ocorrencia[]>)
-            .sort(([a], [b]) => b.localeCompare(a))
-            .map(([data, itens]) => (
-              <div key={data} className="card">
-                <h3>{data}</h3>
-                <div className="stack" style={{ marginTop: 8 }}>
-                  {itens.map((o) => (
-                    <a
-                      key={o.id}
-                      href={`/ocorrencias/${o.id}`}
-                      onClick={(e) => {
-                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                        e.preventDefault();
-                        setOcorrenciaAbertaId(o.id);
-                      }}
-                    >
-                      {o.titulo}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            ))}
-          {Object.keys(dados as Record<string, Ocorrencia[]>).length === 0 && (
-            <p className="muted">Nenhuma ocorrência encontrada.</p>
-          )}
-        </div>
+        <CalendarioOcorrencias
+          dados={dados as Record<string, Ocorrencia[]>}
+          aoAbrirOcorrencia={setOcorrenciaAbertaId}
+        />
       )}
 
       {ocorrenciaAbertaId && (

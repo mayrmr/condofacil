@@ -427,13 +427,13 @@ h1 {
 
 .page-topbar h1 {
   margin-bottom: 0;
+  font-size: 1.9rem;
 }
 
 .page-topbar-acoes {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .page-topbar-subtitulo {
@@ -581,6 +581,7 @@ button,
   border-radius: 999px;
   font-size: 0.9rem;
   font-weight: 700;
+  white-space: nowrap;
   transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease,
     box-shadow 0.15s ease, opacity 0.15s ease;
 }
