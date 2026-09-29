@@ -898,7 +898,12 @@ button:disabled {
 
 .calendario-grade {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* minmax(0, 1fr) em vez de so 1fr: o tamanho minimo implicito de uma
+     coluna de grid e "auto" (o max-content da celula), entao sem o
+     minmax a grade nunca encolhe alem da largura do conteudo das
+     celulas — em telas estreitas isso empurra a grade pra fora do
+     card em vez de encolher as colunas. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
   margin-top: 14px;
 }
