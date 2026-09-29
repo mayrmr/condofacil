@@ -659,6 +659,56 @@ button:disabled {
 .badge-AVALIACAO { background: color-mix(in srgb, var(--success) 18%, var(--surface-strong)); color: var(--success); }
 .badge-EXCLUIDA { background: var(--danger-soft); color: var(--danger); }
 
+.badge-prioridade-BAIXA { background: color-mix(in srgb, var(--success) 18%, var(--surface-strong)); color: var(--success); }
+.badge-prioridade-MEDIA { background: #fbe8a6; color: #8a6d1a; }
+.badge-prioridade-ALTA { background: var(--danger-soft); color: var(--danger); }
+.badge-prioridade-URGENTE { background: var(--danger); color: #fff; }
+
+/* ---------- Bloco de responsavel + status (detalhe de ocorrencia) ---------- */
+
+.responsavel-status-bloco {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .responsavel-status-bloco {
+    grid-template-columns: 1fr;
+  }
+}
+
+.responsavel-status-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.responsavel-status-campo label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Galeria de imagens (detalhe de ocorrencia) ---------- */
+
+.imagens-galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.imagens-galeria img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
 /* ---------- Reservas ---------- */
 
 .reserva-destaque {

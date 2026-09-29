@@ -71,6 +71,7 @@ export interface HistoricoStatus {
   statusAnterior: StatusOcorrencia | null;
   statusNovo: StatusOcorrencia;
   usuarioResponsavelId: string;
+  usuarioResponsavelNome: string | null;
   autorTipo: Role;
   observacao: string | null;
   criadoEm: string;

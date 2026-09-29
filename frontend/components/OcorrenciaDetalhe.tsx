@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { FiltroDropdown } from './FiltroDropdown';
 import { IconCheck } from './icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { formatarData, LABEL_CATEGORIA, LABEL_STATUS } from '@/lib/formatacao';
+import { formatarData, LABEL_CATEGORIA, LABEL_PRIORIDADE, LABEL_STATUS } from '@/lib/formatacao';
 import { supabase } from '@/lib/supabase-client';
 import { transicoesPermitidas } from '@/lib/state-machine';
 import type {
@@ -15,6 +16,15 @@ import type {
   Prioridade,
   StatusOcorrencia,
 } from '@/lib/types';
+
+const PRIORIDADES: Prioridade[] = ['BAIXA', 'MEDIA', 'ALTA', 'URGENTE'];
+
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
 
 export function OcorrenciaDetalhe({
   id,
@@ -34,9 +44,13 @@ export function OcorrenciaDetalhe({
   const [funcionarios, setFuncionarios] = useState<PerfilFuncionarioOuGestor[]>([]);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [novoStatus, setNovoStatus] = useState<StatusOcorrencia | ''>('');
-  const [observacao, setObservacao] = useState('');
+  const [statusPendente, setStatusPendente] = useState<StatusOcorrencia | null>(null);
+  const [observacaoStatus, setObservacaoStatus] = useState('');
   const [solucaoAplicada, setSolucaoAplicada] = useState('');
+
+  const [buscaResponsavel, setBuscaResponsavel] = useState('');
+  const [buscaResponsavelAberta, setBuscaResponsavelAberta] = useState(false);
+
   const [novoComentario, setNovoComentario] = useState('');
   const [notaAvaliacao, setNotaAvaliacao] = useState(5);
   const [comentarioAvaliacao, setComentarioAvaliacao] = useState('');
@@ -65,32 +79,49 @@ export function OcorrenciaDetalhe({
     }
   }, [perfil]);
 
+  const resultadosResponsavel = useMemo(() => {
+    if (!buscaResponsavel.trim()) return [];
+    const termo = normalizar(buscaResponsavel);
+    return funcionarios.filter((f) => normalizar(f.nomeCompleto).includes(termo)).slice(0, 8);
+  }, [buscaResponsavel, funcionarios]);
+
   if (erro) return <p className="erro">{erro}</p>;
   if (!ocorrencia || !perfil) return <p className="muted">Carregando...</p>;
 
   const souCriador = perfil.role === 'USUARIO' && ocorrencia.criadoPorUsuarioId === perfil.id;
+  const podeMudarStatusLivre = perfil.role === 'FUNCIONARIO' || perfil.role === 'GESTOR';
   const opcoesStatus = transicoesPermitidas(ocorrencia.statusAtual, perfil.role!);
+  const podeCancelarPropria = perfil.role === 'USUARIO' && opcoesStatus.includes('EXCLUIDA');
   const podeAvaliar =
     souCriador && (ocorrencia.statusAtual === 'RESOLVIDA' || ocorrencia.statusAtual === 'CANCELAMENTO');
   const podeMudarPrioridade = perfil.role === 'FUNCIONARIO' || perfil.role === 'GESTOR';
+  const responsavelAtual = funcionarios.find((f) => f.id === ocorrencia.responsavelFuncionarioId);
 
-  async function handleMudarStatus(e: FormEvent) {
-    e.preventDefault();
-    if (!novoStatus) return;
+  async function aplicarMudancaStatus(status: StatusOcorrencia, extra?: { observacao?: string; solucaoAplicada?: string }) {
     try {
-      await api.patch(`/ocorrencias/${id}/status`, {
-        status: novoStatus,
-        observacao: observacao || undefined,
-        solucaoAplicada: novoStatus === 'RESOLVIDA' ? solucaoAplicada || undefined : undefined,
-      });
-      setNovoStatus('');
-      setObservacao('');
+      await api.patch(`/ocorrencias/${id}/status`, { status, ...extra });
+      setStatusPendente(null);
+      setObservacaoStatus('');
       setSolucaoAplicada('');
       await carregar();
       aoAlterar?.();
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : 'Não foi possível mudar o status.');
     }
+  }
+
+  async function handleConfirmarStatusPendente(e: FormEvent) {
+    e.preventDefault();
+    if (!statusPendente) return;
+    await aplicarMudancaStatus(statusPendente, {
+      observacao: observacaoStatus || undefined,
+      solucaoAplicada: statusPendente === 'RESOLVIDA' ? solucaoAplicada || undefined : undefined,
+    });
+  }
+
+  async function handleCancelarPropria() {
+    if (!confirm('Cancelar esta ocorrência?')) return;
+    await aplicarMudancaStatus('EXCLUIDA');
   }
 
   async function handlePrioridade(prioridade: Prioridade) {
@@ -102,6 +133,8 @@ export function OcorrenciaDetalhe({
   async function handleResponsavel(funcionarioId: string) {
     if (!funcionarioId) return;
     await api.patch(`/ocorrencias/${id}/responsavel`, { funcionarioId });
+    setBuscaResponsavel('');
+    setBuscaResponsavelAberta(false);
     await carregar();
     aoAlterar?.();
   }
@@ -143,6 +176,7 @@ export function OcorrenciaDetalhe({
 
   return (
     <div className="stack">
+      {/* Bloco 1 */}
       <div className="row-between">
         <h1>{ocorrencia.titulo}</h1>
         <span className={`badge badge-${ocorrencia.statusAtual}`}>{LABEL_STATUS[ocorrencia.statusAtual]}</span>
@@ -152,7 +186,7 @@ export function OcorrenciaDetalhe({
         <p>{ocorrencia.descricao}</p>
         <p className="muted" style={{ marginTop: 8 }}>
           {LABEL_CATEGORIA[ocorrencia.categoria] ?? ocorrencia.categoria} · {formatarData(ocorrencia.criadoEm)}
-          {ocorrencia.prioridade ? ` · Prioridade ${ocorrencia.prioridade.toLowerCase()}` : ' · Sem prioridade definida'}
+          {!ocorrencia.prioridade && ' · Sem prioridade definida'}
         </p>
         {ocorrencia.solucaoAplicada && (
           <p style={{ marginTop: 8 }}>
@@ -166,73 +200,142 @@ export function OcorrenciaDetalhe({
         )}
       </div>
 
+      {/* Prioridade — botao suspenso */}
       {podeMudarPrioridade && (
-        <div className="card">
-          <h2>Prioridade</h2>
-          <div className="row" style={{ marginTop: 8 }}>
-            {(['BAIXA', 'MEDIA', 'ALTA', 'URGENTE'] as Prioridade[]).map((p) => (
-              <button
-                key={p}
-                className="prioridade-pill"
-                onClick={() => handlePrioridade(p)}
-                disabled={ocorrencia.prioridade === p}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {perfil.role === 'GESTOR' && (
-        <div className="card">
-          <h2>Responsável</h2>
-          <select
-            style={{ marginTop: 8 }}
-            value={ocorrencia.responsavelFuncionarioId ?? ''}
-            onChange={(e) => handleResponsavel(e.target.value)}
-          >
-            <option value="" disabled>
-              Atribuir funcionário...
-            </option>
-            {funcionarios.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.nomeCompleto} {f.area ? `(${f.area})` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {opcoesStatus.length > 0 && (
-        <form className="card" onSubmit={handleMudarStatus}>
-          <h2>Mudar status</h2>
-          <div className="field" style={{ marginTop: 8 }}>
-            <select value={novoStatus} onChange={(e) => setNovoStatus(e.target.value as StatusOcorrencia)}>
-              <option value="" disabled>
-                Selecione o novo status...
-              </option>
-              {opcoesStatus.map((s) => (
-                <option key={s} value={s}>
-                  {LABEL_STATUS[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-          {novoStatus === 'RESOLVIDA' && (
-            <div className="field">
-              <label htmlFor="solucao">Solução aplicada</label>
-              <textarea id="solucao" value={solucaoAplicada} onChange={(e) => setSolucaoAplicada(e.target.value)} />
-            </div>
+        <div className="card row" style={{ alignItems: 'center', gap: 12 }}>
+          <strong style={{ fontSize: '0.85rem' }}>Prioridade</strong>
+          {ocorrencia.prioridade && (
+            <span className={`badge badge-prioridade-${ocorrencia.prioridade}`}>
+              {LABEL_PRIORIDADE[ocorrencia.prioridade]}
+            </span>
           )}
-          <div className="field">
-            <label htmlFor="observacao">Observação (opcional)</label>
-            <textarea id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+          <FiltroDropdown
+            label="Mudar prioridade"
+            valorSelecionado={ocorrencia.prioridade ?? ''}
+            ativo={false}
+            opcoes={PRIORIDADES.map((p) => ({ valor: p, texto: LABEL_PRIORIDADE[p] }))}
+            aoSelecionar={(v) => handlePrioridade(v as Prioridade)}
+          />
+        </div>
+      )}
+
+      {/* Historico / linha do tempo */}
+      <div className="card">
+        <h2>Histórico</h2>
+        <div style={{ marginTop: 14 }}>
+          {historico.map((h, i) => {
+            const isUltimo = i === historico.length - 1;
+            return (
+              <div key={h.id} className="timeline-item">
+                <div className={`timeline-dot ${isUltimo ? 'atual' : 'completo'}`}>
+                  {!isUltimo && <IconCheck />}
+                </div>
+                <div className="timeline-content">
+                  <strong>{LABEL_STATUS[h.statusNovo]}</strong>
+                  <span className="muted">
+                    {formatarData(h.criadoEm)}
+                    {h.usuarioResponsavelNome ? ` · ${h.usuarioResponsavelNome}` : ''}
+                    {h.observacao ? ` · ${h.observacao}` : ''}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Responsavel + status — compacto, so funcionario/gestor mudam etapa */}
+      {podeMudarStatusLivre && (
+        <div className="card">
+          <div className="responsavel-status-bloco">
+            {perfil.role === 'GESTOR' && (
+              <div className="responsavel-status-campo" style={{ position: 'relative' }}>
+                <label>Responsável</label>
+                {responsavelAtual && !buscaResponsavelAberta ? (
+                  <div className="destinatario-selecionado">
+                    <span>
+                      <strong>{responsavelAtual.nomeCompleto}</strong>
+                      {responsavelAtual.area && <span className="muted"> · {responsavelAtual.area}</span>}
+                    </span>
+                    <button type="button" onClick={() => setBuscaResponsavelAberta(true)} aria-label="Trocar responsável">
+                      Trocar
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      placeholder="Digite o nome do funcionário..."
+                      value={buscaResponsavel}
+                      onChange={(e) => setBuscaResponsavel(e.target.value)}
+                      onFocus={() => setBuscaResponsavelAberta(true)}
+                      onBlur={() => setTimeout(() => setBuscaResponsavelAberta(false), 150)}
+                      autoComplete="off"
+                    />
+                    {buscaResponsavelAberta && resultadosResponsavel.length > 0 && (
+                      <div className="destinatario-sugestoes">
+                        {resultadosResponsavel.map((f) => (
+                          <button key={f.id} type="button" onClick={() => handleResponsavel(f.id)}>
+                            {f.nomeCompleto} {f.area ? `(${f.area})` : ''}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="responsavel-status-campo">
+              <label>Status</label>
+              <div className="row" style={{ alignItems: 'center' }}>
+                <span className={`badge badge-${ocorrencia.statusAtual}`}>{LABEL_STATUS[ocorrencia.statusAtual]}</span>
+                <FiltroDropdown
+                  label="Mudar status"
+                  valorSelecionado={statusPendente ?? ''}
+                  ativo={false}
+                  opcoes={opcoesStatus.map((s) => ({ valor: s, texto: LABEL_STATUS[s] }))}
+                  aoSelecionar={(v) => setStatusPendente(v as StatusOcorrencia)}
+                />
+              </div>
+            </div>
           </div>
-          <button type="submit" className="btn-primary" disabled={!novoStatus}>
-            Confirmar mudança
-          </button>
-        </form>
+
+          {statusPendente && (
+            <form onSubmit={handleConfirmarStatusPendente} className="stack" style={{ marginTop: 14, gap: 8 }}>
+              <p className="muted">
+                Mudar para <strong>{LABEL_STATUS[statusPendente]}</strong>?
+              </p>
+              {statusPendente === 'RESOLVIDA' && (
+                <div className="field">
+                  <label htmlFor="solucao">Solução aplicada</label>
+                  <textarea id="solucao" value={solucaoAplicada} onChange={(e) => setSolucaoAplicada(e.target.value)} />
+                </div>
+              )}
+              <div className="field">
+                <label htmlFor="observacaoStatus">Observação (opcional)</label>
+                <textarea
+                  id="observacaoStatus"
+                  value={observacaoStatus}
+                  onChange={(e) => setObservacaoStatus(e.target.value)}
+                />
+              </div>
+              <div className="row">
+                <button type="submit" className="btn-primary">
+                  Confirmar mudança
+                </button>
+                <button type="button" onClick={() => setStatusPendente(null)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {podeCancelarPropria && (
+        <button type="button" className="btn-danger" onClick={handleCancelarPropria}>
+          Cancelar ocorrência
+        </button>
       )}
 
       {podeAvaliar && (
@@ -262,48 +365,30 @@ export function OcorrenciaDetalhe({
         </form>
       )}
 
+      {/* Imagens — galeria otimizada */}
       <div className="card">
         <h2>Imagens</h2>
-        <div className="row" style={{ marginTop: 8, flexWrap: 'wrap' }}>
+        <div className="imagens-galeria">
           {ocorrencia.imagens?.map((img) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={img.id} src={img.url} alt="" style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8 }} />
+            <img key={img.id} src={img.url} alt="" />
           ))}
         </div>
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          style={{ marginTop: 8 }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleUploadImagem(file);
-          }}
-        />
+        <label className="btn" style={{ display: 'inline-flex', marginTop: 10, cursor: 'pointer' }}>
+          Adicionar imagem
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleUploadImagem(file);
+            }}
+          />
+        </label>
       </div>
 
-      <div className="card">
-        <h2>Histórico</h2>
-        <div style={{ marginTop: 14 }}>
-          {historico.map((h, i) => {
-            const isUltimo = i === historico.length - 1;
-            return (
-              <div key={h.id} className="timeline-item">
-                <div className={`timeline-dot ${isUltimo ? 'atual' : 'completo'}`}>
-                  {!isUltimo && <IconCheck />}
-                </div>
-                <div className="timeline-content">
-                  <strong>{LABEL_STATUS[h.statusNovo]}</strong>
-                  <span className="muted">
-                    {formatarData(h.criadoEm)}
-                    {h.observacao ? ` · ${h.observacao}` : ''}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+      {/* Comentarios */}
       <div className="card">
         <h2>Conversa</h2>
         <div className="chat" style={{ marginTop: 12 }}>

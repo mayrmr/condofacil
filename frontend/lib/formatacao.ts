@@ -1,4 +1,4 @@
-import type { StatusOcorrencia } from './types';
+import type { Prioridade, StatusOcorrencia } from './types';
 
 export const LABEL_STATUS: Record<StatusOcorrencia, string> = {
   ABERTURA: 'Aberta',
@@ -22,6 +22,14 @@ export const LABEL_CATEGORIA: Record<string, string> = {
   seguranca: 'Segurança',
   manutencao: 'Manutenção',
   outro: 'Outro',
+};
+
+// Verde/amarelo/vermelho — mesma logica das .badge-prioridade-* (globals.css).
+export const LABEL_PRIORIDADE: Record<Prioridade, string> = {
+  BAIXA: 'Baixa',
+  MEDIA: 'Média',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
 };
 
 export function formatarData(iso: string): string {

@@ -98,12 +98,25 @@ describe('Ocorrencias — fluxo completo (e2e)', () => {
     ocorrenciaId = resposta.body.id;
   });
 
-  it('gestor nao pode pular direto para RESOLVIDA (transicao inexistente na maquina de estados)', async () => {
+  it('gestor pode mudar livremente para qualquer etapa real (override fora da maquina de estados)', async () => {
+    // Ocorrencia isolada, sem afetar o fluxo sequencial compartilhado abaixo.
+    const outra = await request(app.getHttpServer())
+      .post('/ocorrencias')
+      .set(como('USUARIO', USUARIO_ID))
+      .send({
+        titulo: 'Vazamento',
+        descricao: 'Vazamento no corredor',
+        categoria: 'vazamento',
+        localizacaoTipo: 'BLOCO',
+        localizacaoId: randomUUID(),
+      })
+      .expect(201);
+
     await request(app.getHttpServer())
-      .patch(`/ocorrencias/${ocorrenciaId}/status`)
+      .patch(`/ocorrencias/${outra.body.id}/status`)
       .set(como('GESTOR', GESTOR_ID))
       .send({ status: 'RESOLVIDA' })
-      .expect(400);
+      .expect(200);
   });
 
   it('funcionario ainda nao atribuido nao pode agir sobre a ocorrencia', async () => {

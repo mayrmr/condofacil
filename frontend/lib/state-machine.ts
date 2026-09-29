@@ -16,6 +16,25 @@ const TRANSICOES: { de: StatusOcorrencia; para: StatusOcorrencia; rolesPermitida
   { de: 'AGUARDA_MATERIAL', para: 'CANCELAMENTO', rolesPermitidas: ['GESTOR'] },
 ];
 
+// Etapas reais do fluxo (fora EXCLUIDA — cancelamento do proprio
+// solicitante antes de analise, nao uma etapa de trabalho).
+const STATUS_REAIS: StatusOcorrencia[] = [
+  'ABERTURA',
+  'ANALISE',
+  'ATENDIMENTO',
+  'AGUARDA_MATERIAL',
+  'RESOLVIDA',
+  'AVALIACAO',
+  'CANCELAMENTO',
+];
+
+function podeMudarLivremente(role: Role): boolean {
+  return role === 'GESTOR' || role === 'FUNCIONARIO';
+}
+
 export function transicoesPermitidas(de: StatusOcorrencia, role: Role): StatusOcorrencia[] {
+  if (podeMudarLivremente(role)) {
+    return STATUS_REAIS.filter((s) => s !== de);
+  }
   return TRANSICOES.filter((t) => t.de === de && t.rolesPermitidas.includes(role)).map((t) => t.para);
 }

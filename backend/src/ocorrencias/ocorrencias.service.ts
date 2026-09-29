@@ -256,10 +256,50 @@ export class OcorrenciasService {
 
   async historico(user: AuthUser, id: string) {
     await this.buscarEntidadeOuFalhar(user, id);
-    return this.prisma.historicoStatus.findMany({
+    const historico = await this.prisma.historicoStatus.findMany({
       where: { ocorrenciaId: id },
       orderBy: { criadoEm: 'asc' },
     });
+    return this.resolverNomesResponsaveis(historico);
+  }
+
+  // Resolve o nome de exibicao de quem fez cada mudanca de status —
+  // usuarioResponsavelId + autorTipo apontam pra tabelas diferentes
+  // (usuarios/funcionarios/gestores) dependendo do papel de quem agiu.
+  private async resolverNomesResponsaveis<T extends { usuarioResponsavelId: string; autorTipo: Role }>(
+    itens: T[],
+  ): Promise<(T & { usuarioResponsavelNome: string | null })[]> {
+    const idsPorTipo: Record<Role, Set<string>> = {
+      [Role.USUARIO]: new Set(),
+      [Role.FUNCIONARIO]: new Set(),
+      [Role.GESTOR]: new Set(),
+    };
+    for (const item of itens) idsPorTipo[item.autorTipo].add(item.usuarioResponsavelId);
+
+    const [usuarios, funcionarios, gestores] = await Promise.all([
+      this.prisma.usuario.findMany({
+        where: { id: { in: [...idsPorTipo[Role.USUARIO]] } },
+        select: { id: true, nomeCompleto: true },
+      }),
+      this.prisma.funcionario.findMany({
+        where: { id: { in: [...idsPorTipo[Role.FUNCIONARIO]] } },
+        select: { id: true, nomeCompleto: true },
+      }),
+      this.prisma.gestor.findMany({
+        where: { id: { in: [...idsPorTipo[Role.GESTOR]] } },
+        select: { id: true, nomeCompleto: true },
+      }),
+    ]);
+
+    const nomes = new Map<string, string>();
+    for (const u of usuarios) nomes.set(`${Role.USUARIO}:${u.id}`, u.nomeCompleto);
+    for (const f of funcionarios) nomes.set(`${Role.FUNCIONARIO}:${f.id}`, f.nomeCompleto);
+    for (const g of gestores) nomes.set(`${Role.GESTOR}:${g.id}`, g.nomeCompleto);
+
+    return itens.map((item) => ({
+      ...item,
+      usuarioResponsavelNome: nomes.get(`${item.autorTipo}:${item.usuarioResponsavelId}`) ?? null,
+    }));
   }
 
   private async buscarEntidadeOuFalhar(user: AuthUser, id: string) {

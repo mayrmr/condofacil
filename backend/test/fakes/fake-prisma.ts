@@ -12,6 +12,8 @@ export class FakePrismaService {
   imagens: any[] = [];
   funcionarios: any[] = [];
   funcionarioPredios: any[] = [];
+  usuarios: any[] = [];
+  gestores: any[] = [];
 
   ocorrencia = {
     create: async ({ data }: { data: any }) => {
@@ -79,6 +81,15 @@ export class FakePrismaService {
       if (!registro) return null;
       return { ...registro, predios: this.funcionarioPredios.filter((p) => p.funcionarioId === registro.id) };
     },
+    findMany: async ({ where }: { where: any }) => this.funcionarios.filter((f) => matches(f, where)),
+  };
+
+  usuario = {
+    findMany: async ({ where }: { where: any }) => this.usuarios.filter((u) => matches(u, where)),
+  };
+
+  gestor = {
+    findMany: async ({ where }: { where: any }) => this.gestores.filter((g) => matches(g, where)),
   };
 
   async $transaction(arg: unknown[] | ((tx: this) => Promise<unknown>)) {

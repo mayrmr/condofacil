@@ -43,7 +43,31 @@ export function encontrarTransicao(
   return TRANSICOES.find((t) => t.de === de && t.para === para);
 }
 
+// Etapas reais do fluxo (fora EXCLUIDA, que e um cancelamento antes de
+// analise feito so pelo proprio solicitante, nao uma etapa de trabalho).
+const STATUS_REAIS: readonly StatusOcorrencia[] = [
+  'ABERTURA',
+  'ANALISE',
+  'ATENDIMENTO',
+  'AGUARDA_MATERIAL',
+  'RESOLVIDA',
+  'AVALIACAO',
+  'CANCELAMENTO',
+];
+
+// Funcionario e gestor podem mudar a ocorrencia pra qualquer etapa real,
+// livre da tabela de transicoes acima (que so descreve o fluxo "feliz"
+// esperado) — usuario continua restrito as transicoes explicitas da
+// tabela (cancelar a propria ocorrencia recem-aberta, avaliar a
+// resolucao).
+function podeMudarLivremente(role: Role): boolean {
+  return role === 'GESTOR' || role === 'FUNCIONARIO';
+}
+
 export function podeTransicionar(de: StatusOcorrencia, para: StatusOcorrencia, role: Role): boolean {
+  if (podeMudarLivremente(role) && para !== de && STATUS_REAIS.includes(de) && STATUS_REAIS.includes(para)) {
+    return true;
+  }
   const transicao = encontrarTransicao(de, para);
   return transicao !== undefined && transicao.rolesPermitidas.includes(role);
 }
@@ -57,5 +81,8 @@ export function validarTransicao(de: StatusOcorrencia, para: StatusOcorrencia, r
 }
 
 export function transicoesPermitidas(de: StatusOcorrencia, role: Role): StatusOcorrencia[] {
+  if (podeMudarLivremente(role)) {
+    return STATUS_REAIS.filter((s) => s !== de);
+  }
   return TRANSICOES.filter((t) => t.de === de && t.rolesPermitidas.includes(role)).map((t) => t.para);
 }
