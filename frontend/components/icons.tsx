@@ -6,6 +6,15 @@ function base(children: React.ReactNode, props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 24 24"
+      // Tamanho explicito (width/height) e essencial aqui: um <svg> sem
+      // width/height, so com viewBox, nao tem tamanho intrinseco — o
+      // resultado do calculo de "auto" varia entre motores de renderizacao
+      // (ex.: dentro de um flex container com align-items:center, alguns
+      // preenchem o container, outros colapsam pra 0x0/invisivel). CSS (ex.:
+      // ".sidebar nav a svg") ou um width/height explicito via props ainda
+      // sobrescreve isso normalmente.
+      width={24}
+      height={24}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.8}

@@ -48,6 +48,12 @@ export class ReservasService {
     if (dto.horaFim <= dto.horaInicio) {
       throw new BadRequestException('O horario final deve ser depois do horario inicial.');
     }
+    if (area.horarioAbertura && dto.horaInicio < area.horarioAbertura) {
+      throw new BadRequestException(`Esta area so pode ser reservada a partir das ${area.horarioAbertura}.`);
+    }
+    if (area.horarioFechamento && dto.horaFim > area.horarioFechamento) {
+      throw new BadRequestException(`Esta area so pode ser reservada ate as ${area.horarioFechamento}.`);
+    }
 
     const data = new Date(dto.data);
     const conflitos = await this.prisma.reserva.findMany({

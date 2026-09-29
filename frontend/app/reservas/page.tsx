@@ -89,6 +89,8 @@ function NovaReservaForm({
   const [horaFim, setHoraFim] = useState('');
   const [erro, setErro] = useState<string | null>(null);
 
+  const areaSelecionada = areas.find((a) => a.id === areaId);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErro(null);
@@ -128,13 +130,35 @@ function NovaReservaForm({
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label htmlFor="horaInicio">Início</label>
-          <input id="horaInicio" type="time" required value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+          <input
+            id="horaInicio"
+            type="time"
+            required
+            min={areaSelecionada?.horarioAbertura ?? undefined}
+            max={areaSelecionada?.horarioFechamento ?? undefined}
+            value={horaInicio}
+            onChange={(e) => setHoraInicio(e.target.value)}
+          />
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label htmlFor="horaFim">Fim</label>
-          <input id="horaFim" type="time" required value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
+          <input
+            id="horaFim"
+            type="time"
+            required
+            min={areaSelecionada?.horarioAbertura ?? undefined}
+            max={areaSelecionada?.horarioFechamento ?? undefined}
+            value={horaFim}
+            onChange={(e) => setHoraFim(e.target.value)}
+          />
         </div>
       </div>
+      {areaSelecionada?.horarioAbertura && areaSelecionada?.horarioFechamento && (
+        <p className="muted" style={{ fontSize: '0.8rem' }}>
+          Esta área só pode ser reservada entre {areaSelecionada.horarioAbertura} e{' '}
+          {areaSelecionada.horarioFechamento}.
+        </p>
+      )}
       {erro && <p className="erro">{erro}</p>}
       <button type="submit" className="btn-primary">
         Solicitar reserva
@@ -443,6 +467,23 @@ function ConteudoReservas() {
                     <div className="area-card-status">
                       {a.ativa ? a.descricao || 'Disponível para reserva' : 'Indisponível'}
                     </div>
+                    {(a.capacidadeMaxima || a.horarioFuncionamento) && (
+                      <div className="muted" style={{ marginTop: 6, fontSize: '0.78rem' }}>
+                        {a.capacidadeMaxima ? `Até ${a.capacidadeMaxima} pessoas` : ''}
+                        {a.capacidadeMaxima && a.horarioFuncionamento ? ' · ' : ''}
+                        {a.horarioFuncionamento ?? ''}
+                      </div>
+                    )}
+                    {a.regras && (
+                      <p className="muted" style={{ marginTop: 6, fontSize: '0.78rem' }}>
+                        {a.regras}
+                      </p>
+                    )}
+                    {a.horarioAbertura && a.horarioFechamento && (
+                      <p className="muted" style={{ marginTop: 6, fontSize: '0.78rem' }}>
+                        Reservas de {a.horarioAbertura} às {a.horarioFechamento}
+                      </p>
+                    )}
                   </div>
                 </div>
               );

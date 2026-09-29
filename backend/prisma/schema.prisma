@@ -153,6 +153,11 @@ model AreaSocial {
   fotoUrl              String? @map("foto_url")
   capacidadeMaxima     Int?    @map("capacidade_maxima")
   horarioFuncionamento String? @map("horario_funcionamento")
+  // "HH:mm" — janela em que a area pode ser reservada (diferente do texto
+  // livre acima, que e so descritivo). Quando preenchidos, reservas.service
+  // recusa qualquer reserva fora dessa janela.
+  horarioAbertura      String? @map("horario_abertura")
+  horarioFechamento    String? @map("horario_fechamento")
   regras               String?
 
   predio   Predio    @relation(fields: [predioId], references: [id])

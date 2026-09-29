@@ -126,6 +126,8 @@ export class PrediosService {
         descricao: dto.descricao,
         capacidadeMaxima: dto.capacidadeMaxima,
         horarioFuncionamento: dto.horarioFuncionamento,
+        horarioAbertura: dto.horarioAbertura,
+        horarioFechamento: dto.horarioFechamento,
         regras: dto.regras,
       },
     });
@@ -141,6 +143,8 @@ export class PrediosService {
         ...(dto.ativa !== undefined ? { ativa: dto.ativa } : {}),
         ...(dto.capacidadeMaxima !== undefined ? { capacidadeMaxima: dto.capacidadeMaxima } : {}),
         ...(dto.horarioFuncionamento !== undefined ? { horarioFuncionamento: dto.horarioFuncionamento } : {}),
+        ...(dto.horarioAbertura !== undefined ? { horarioAbertura: dto.horarioAbertura } : {}),
+        ...(dto.horarioFechamento !== undefined ? { horarioFechamento: dto.horarioFechamento } : {}),
         ...(dto.regras !== undefined ? { regras: dto.regras } : {}),
       },
     });

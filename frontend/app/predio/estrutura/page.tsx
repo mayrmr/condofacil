@@ -21,6 +21,8 @@ interface FormAreaValores {
   descricao: string;
   capacidadeMaxima: string;
   horarioFuncionamento: string;
+  horarioAbertura: string;
+  horarioFechamento: string;
   regras: string;
 }
 
@@ -29,6 +31,8 @@ const FORM_AREA_VAZIO: FormAreaValores = {
   descricao: '',
   capacidadeMaxima: '',
   horarioFuncionamento: '',
+  horarioAbertura: '',
+  horarioFechamento: '',
   regras: '',
 };
 
@@ -49,6 +53,8 @@ function CardAreaSocial({
     descricao: area.descricao ?? '',
     capacidadeMaxima: area.capacidadeMaxima ? String(area.capacidadeMaxima) : '',
     horarioFuncionamento: area.horarioFuncionamento ?? '',
+    horarioAbertura: area.horarioAbertura ?? '',
+    horarioFechamento: area.horarioFechamento ?? '',
     regras: area.regras ?? '',
   });
   const [enviandoFoto, setEnviandoFoto] = useState(false);
@@ -63,6 +69,8 @@ function CardAreaSocial({
         descricao: valores.descricao || undefined,
         capacidadeMaxima: valores.capacidadeMaxima ? Number(valores.capacidadeMaxima) : undefined,
         horarioFuncionamento: valores.horarioFuncionamento || undefined,
+        horarioAbertura: valores.horarioAbertura || undefined,
+        horarioFechamento: valores.horarioFechamento || undefined,
         regras: valores.regras || undefined,
       });
       setEditando(false);
@@ -156,6 +164,29 @@ function CardAreaSocial({
                 style={{ flex: 1 }}
               />
             </div>
+            <div className="row">
+              <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                <label htmlFor={`abertura-${area.id}`}>Reservas a partir de</label>
+                <input
+                  id={`abertura-${area.id}`}
+                  type="time"
+                  value={valores.horarioAbertura}
+                  onChange={(e) => setValores((v) => ({ ...v, horarioAbertura: e.target.value }))}
+                />
+              </div>
+              <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                <label htmlFor={`fechamento-${area.id}`}>Reservas até</label>
+                <input
+                  id={`fechamento-${area.id}`}
+                  type="time"
+                  value={valores.horarioFechamento}
+                  onChange={(e) => setValores((v) => ({ ...v, horarioFechamento: e.target.value }))}
+                />
+              </div>
+            </div>
+            <p className="muted" style={{ fontSize: '0.78rem' }}>
+              Fora desse intervalo, o morador não consegue reservar esta área.
+            </p>
             <textarea
               value={valores.regras}
               onChange={(e) => setValores((v) => ({ ...v, regras: e.target.value }))}
@@ -185,6 +216,11 @@ function CardAreaSocial({
             {area.regras && (
               <p className="muted" style={{ marginTop: 6, fontSize: '0.78rem' }}>
                 {area.regras}
+              </p>
+            )}
+            {area.horarioAbertura && area.horarioFechamento && (
+              <p className="muted" style={{ marginTop: 6, fontSize: '0.78rem' }}>
+                Reservas de {area.horarioAbertura} às {area.horarioFechamento}
               </p>
             )}
             {!area.ativa && <span className="badge badge-CANCELAMENTO" style={{ marginTop: 8 }}>Indisponível</span>}

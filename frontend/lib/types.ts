@@ -125,6 +125,8 @@ export interface AreaSocial {
   fotoUrl: string | null;
   capacidadeMaxima: number | null;
   horarioFuncionamento: string | null;
+  horarioAbertura: string | null;
+  horarioFechamento: string | null;
   regras: string | null;
 }
 
