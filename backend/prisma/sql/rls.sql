@@ -113,10 +113,21 @@ create policy comentarios_isolamento_predio on public.comentarios
     or exists (select 1 from public.avisos a where a.id = aviso_id and a.predio_id in (select predios_do_usuario_autenticado()))
   );
 
+-- Corrigido: a versao anterior so cobria o caso via ocorrencia_id — uma
+-- Imagem de Aviso (aviso_id preenchido, ocorrencia_id nulo) nunca batia
+-- nessa condicao e ficava inacessivel via RLS pra todo mundo (o "exists"
+-- em ocorrencias nunca e verdadeiro quando ocorrencia_id e nulo). Mesmo
+-- padrao de comentarios_isolamento_predio acima.
 create policy imagens_isolamento_predio on public.imagens
   for all
-  using (exists (select 1 from public.ocorrencias o where o.id = ocorrencia_id and o.predio_id in (select predios_do_usuario_autenticado())))
-  with check (exists (select 1 from public.ocorrencias o where o.id = ocorrencia_id and o.predio_id in (select predios_do_usuario_autenticado())));
+  using (
+    exists (select 1 from public.ocorrencias o where o.id = ocorrencia_id and o.predio_id in (select predios_do_usuario_autenticado()))
+    or exists (select 1 from public.avisos a where a.id = aviso_id and a.predio_id in (select predios_do_usuario_autenticado()))
+  )
+  with check (
+    exists (select 1 from public.ocorrencias o where o.id = ocorrencia_id and o.predio_id in (select predios_do_usuario_autenticado()))
+    or exists (select 1 from public.avisos a where a.id = aviso_id and a.predio_id in (select predios_do_usuario_autenticado()))
+  );
 
 create policy historico_status_isolamento_predio on public.historico_status
   for select

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { ConfirmarImagemDto } from '../common/dto/confirmar-imagem.dto.js';
 import type { CriarComentarioDto } from '../common/dto/criar-comentario.dto.js';
 import { EXTENSAO_POR_CONTENT_TYPE } from '../common/dto/solicitar-upload-imagem.dto.js';
@@ -84,6 +84,29 @@ export class AvisosService {
   }
 
   async criar(gestorId: string, predioId: string, dto: CriarAvisoDto) {
+    // Corrigido: antes gravava localizacaoId/destinatarioBlocoId sem
+    // confirmar que pertencem a este predio (confiava so na validacao do
+    // formulario no frontend) — um payload manual podia referenciar
+    // bloco/area de outro predio inteiro.
+    if (dto.localizacaoTipo === 'BLOCO' && dto.localizacaoId) {
+      const bloco = await this.prisma.bloco.findUnique({ where: { id: dto.localizacaoId } });
+      if (!bloco || bloco.predioId !== predioId) {
+        throw new BadRequestException('Bloco de localizacao nao pertence a este predio.');
+      }
+    }
+    if (dto.localizacaoTipo === 'AREA_SOCIAL' && dto.localizacaoId) {
+      const area = await this.prisma.areaSocial.findUnique({ where: { id: dto.localizacaoId } });
+      if (!area || area.predioId !== predioId) {
+        throw new BadRequestException('Area social de localizacao nao pertence a este predio.');
+      }
+    }
+    if (dto.destinatarioTipo === 'BLOCO' && dto.destinatarioBlocoId) {
+      const blocoDestinatario = await this.prisma.bloco.findUnique({ where: { id: dto.destinatarioBlocoId } });
+      if (!blocoDestinatario || blocoDestinatario.predioId !== predioId) {
+        throw new BadRequestException('Bloco de destinatario nao pertence a este predio.');
+      }
+    }
+
     return this.prisma.aviso.create({
       data: {
         predioId,

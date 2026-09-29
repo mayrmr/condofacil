@@ -1,4 +1,10 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role, StatusOcorrencia } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -94,7 +100,19 @@ export class UsuariosService {
     };
 
     switch (user.role) {
-      case Role.USUARIO:
+      case Role.USUARIO: {
+        // Corrigido: antes aceitava qualquer apartamentoId sem checar que
+        // ele pertence ao mesmo predio do usuario — um morador podia se
+        // "mudar" pra um apartamento de outro predio so informando o UUID.
+        if (dto.apartamentoId) {
+          const apartamento = await this.prisma.apartamento.findUnique({
+            where: { id: dto.apartamentoId },
+            include: { bloco: true },
+          });
+          if (!apartamento || apartamento.bloco.predioId !== user.predioIds[0]) {
+            throw new BadRequestException('Apartamento nao pertence ao seu predio.');
+          }
+        }
         return this.prisma.usuario.update({
           where: { id: user.perfilId },
           data: {
@@ -103,6 +121,7 @@ export class UsuariosService {
             ...(dto.tipoVinculo ? { tipoVinculo: dto.tipoVinculo } : {}),
           },
         });
+      }
       case Role.FUNCIONARIO:
         return this.prisma.funcionario.update({ where: { id: user.perfilId }, data: dadosComuns });
       case Role.GESTOR:

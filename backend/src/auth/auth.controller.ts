@@ -1,4 +1,5 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
@@ -11,23 +12,30 @@ import { ConviteDto } from './dto/convite.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegistroDto } from './dto/registro.dto.js';
 
+// Limite apertado (5/min por IP) nas rotas publicas que criam conta ou
+// validam senha — sao o alvo classico de brute-force/spam de cadastro.
+const THROTTLE_SENSIVEL = { default: { limit: 5, ttl: 60_000 } };
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle(THROTTLE_SENSIVEL)
   @Post('registro')
   registro(@Body() dto: RegistroDto) {
     return this.authService.registro(dto);
   }
 
   @Public()
+  @Throttle(THROTTLE_SENSIVEL)
   @Post('cadastro-empresa')
   cadastrarEmpresa(@Body() dto: CadastroEmpresaDto) {
     return this.authService.cadastrarEmpresa(dto);
   }
 
   @Public()
+  @Throttle(THROTTLE_SENSIVEL)
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -40,6 +48,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(THROTTLE_SENSIVEL)
   @Post('convite/:token/aceitar')
   aceitarConvite(@Param('token') token: string, @Body() dto: AceitarConviteDto) {
     return this.authService.aceitarConvite(token, dto);

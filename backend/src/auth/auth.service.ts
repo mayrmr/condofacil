@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -130,12 +131,16 @@ export class AuthService {
   }
 
   async convite(gestorId: string, dto: ConviteDto) {
-    const predios = await this.prisma.predio.findMany({
-      where: { id: { in: dto.predioIds } },
-      select: { id: true },
+    // Corrigido: antes so verificava que os predios existiam no banco, sem
+    // checar que ESTE gestor administra todos eles — um gestor mal
+    // intencionado (ou uma conta comprometida) podia convidar alguem pra
+    // qualquer predio do sistema so sabendo o UUID.
+    const vinculos = await this.prisma.gestorPredio.findMany({
+      where: { gestorId, predioId: { in: dto.predioIds } },
+      select: { predioId: true },
     });
-    if (predios.length !== dto.predioIds.length) {
-      throw new BadRequestException('Um ou mais predios informados nao existem.');
+    if (vinculos.length !== dto.predioIds.length) {
+      throw new ForbiddenException('Voce so pode convidar para predios que voce administra.');
     }
 
     const tokenBruto = randomBytes(32).toString('hex');
