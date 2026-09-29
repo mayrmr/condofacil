@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { PageTopBar } from '@/components/PageTopBar';
 import { RequireAuth } from '@/components/RequireAuth';
-import { IconCamera } from '@/components/icons';
+import { IconBuilding, IconCamera } from '@/components/icons';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
@@ -91,8 +91,20 @@ function CardAreaSocial({
     }
   }
 
+  async function handleExcluir() {
+    if (!confirm(`Excluir a área "${area.nome}" permanentemente?`)) return;
+    try {
+      await api.delete(`/predios/${predioId}/areas-sociais/${area.id}`);
+      aoAtualizar();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Não foi possível excluir a área.');
+    }
+  }
+
   return (
-    <div className={`area-card${area.ativa ? '' : ' area-card-indisponivel'}`}>
+    <div
+      className={`area-card${area.ativa ? '' : ' area-card-indisponivel'}${editando ? ' area-card-expandido' : ''}`}
+    >
       <div
         className="area-card-banner"
         style={{
@@ -176,10 +188,176 @@ function CardAreaSocial({
               </p>
             )}
             {!area.ativa && <span className="badge badge-CANCELAMENTO" style={{ marginTop: 8 }}>Indisponível</span>}
-            <button type="button" style={{ marginTop: 10 }} onClick={() => setEditando(true)}>
-              Editar
-            </button>
+            <div className="row" style={{ marginTop: 10 }}>
+              <button type="button" onClick={() => setEditando(true)}>
+                Editar
+              </button>
+              <button type="button" className="btn-danger" onClick={handleExcluir}>
+                Excluir
+              </button>
+            </div>
           </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CardBloco({
+  bloco,
+  indice,
+  predioId,
+  aoAtualizar,
+}: {
+  bloco: Bloco;
+  indice: number;
+  predioId: string;
+  aoAtualizar: () => void;
+}) {
+  const [expandido, setExpandido] = useState(false);
+  const [editandoNome, setEditandoNome] = useState(false);
+  const [nomeValor, setNomeValor] = useState(bloco.nome);
+  const [numeroApartamento, setNumeroApartamento] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function handleRenomear(e: FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    try {
+      await api.patch(`/predios/${predioId}/blocos/${bloco.id}`, { nome: nomeValor });
+      setEditandoNome(false);
+      aoAtualizar();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Não foi possível renomear.');
+    }
+  }
+
+  async function handleExcluirBloco() {
+    if (!confirm(`Excluir o bloco "${bloco.nome}" permanentemente?`)) return;
+    try {
+      await api.delete(`/predios/${predioId}/blocos/${bloco.id}`);
+      aoAtualizar();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Não foi possível excluir o bloco.');
+    }
+  }
+
+  async function handleCriarApartamento(e: FormEvent) {
+    e.preventDefault();
+    const numero = numeroApartamento.trim();
+    if (!numero) return;
+    try {
+      await api.post(`/predios/${predioId}/blocos/${bloco.id}/apartamentos`, { numero });
+      setNumeroApartamento('');
+      aoAtualizar();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : 'Não foi possível criar o apartamento.');
+    }
+  }
+
+  async function handleExcluirApartamento(apartamentoId: string, numero: string) {
+    if (!confirm(`Excluir o apartamento ${numero}?`)) return;
+    try {
+      await api.delete(`/predios/${predioId}/blocos/${bloco.id}/apartamentos/${apartamentoId}`);
+      aoAtualizar();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : 'Não foi possível excluir o apartamento.');
+    }
+  }
+
+  return (
+    <div
+      className={`area-card${expandido ? ' area-card-expandido' : ' area-card-clicavel'}`}
+      onClick={!expandido ? () => setExpandido(true) : undefined}
+    >
+      <div
+        className="area-card-banner"
+        style={{
+          background: GRADIENTES_AREA[indice % GRADIENTES_AREA.length],
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <IconBuilding style={{ width: 28, height: 28, color: '#fff', opacity: 0.85 }} />
+      </div>
+      <div className="area-card-body">
+        {!expandido ? (
+          <>
+            <div className="area-card-nome">{bloco.nome}</div>
+            <div className="area-card-status">
+              {bloco.apartamentos.length} {bloco.apartamentos.length === 1 ? 'apartamento' : 'apartamentos'}
+            </div>
+          </>
+        ) : (
+          <div className="stack" style={{ gap: 12 }} onClick={(e) => e.stopPropagation()}>
+            {editandoNome ? (
+              <form onSubmit={handleRenomear} className="row">
+                <input
+                  value={nomeValor}
+                  onChange={(e) => setNomeValor(e.target.value)}
+                  style={{ flex: 1 }}
+                  required
+                />
+                <button type="submit" className="btn-primary">
+                  Salvar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditandoNome(false);
+                    setNomeValor(bloco.nome);
+                  }}
+                >
+                  Cancelar
+                </button>
+              </form>
+            ) : (
+              <div className="row-between">
+                <strong>{bloco.nome}</strong>
+                <div className="row">
+                  <button type="button" onClick={() => setEditandoNome(true)}>
+                    Renomear
+                  </button>
+                  <button type="button" onClick={() => setExpandido(false)}>
+                    Recolher
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="stack" style={{ gap: 6 }}>
+              {bloco.apartamentos.map((ap) => (
+                <div key={ap.id} className="row-between">
+                  <span className="muted">Apto {ap.numero}</span>
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    onClick={() => handleExcluirApartamento(ap.id, ap.numero)}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              ))}
+              {bloco.apartamentos.length === 0 && <span className="muted">Nenhum apartamento ainda.</span>}
+            </div>
+
+            <form onSubmit={handleCriarApartamento} className="row">
+              <input
+                placeholder="Número do apartamento"
+                value={numeroApartamento}
+                onChange={(e) => setNumeroApartamento(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button type="submit">Adicionar</button>
+            </form>
+
+            {erro && <p className="erro">{erro}</p>}
+
+            <button type="button" className="btn-danger" onClick={handleExcluirBloco}>
+              Excluir bloco
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -196,7 +374,6 @@ function GerenciarEstrutura() {
   const [andares, setAndares] = useState('');
   const [apartamentosPorAndar, setApartamentosPorAndar] = useState('');
   const [novaArea, setNovaArea] = useState<FormAreaValores>(FORM_AREA_VAZIO);
-  const [numeroApartamento, setNumeroApartamento] = useState<Record<string, string>>({});
   const [erro, setErro] = useState<string | null>(null);
 
   async function carregar() {
@@ -251,19 +428,6 @@ function GerenciarEstrutura() {
     }
   }
 
-  async function handleCriarApartamento(blocoId: string, e: FormEvent) {
-    e.preventDefault();
-    const numero = numeroApartamento[blocoId]?.trim();
-    if (!predioId || !numero) return;
-    try {
-      await api.post(`/predios/${predioId}/blocos/${blocoId}/apartamentos`, { numero });
-      setNumeroApartamento((prev) => ({ ...prev, [blocoId]: '' }));
-      await carregar();
-    } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Não foi possível criar o apartamento.');
-    }
-  }
-
   if (!predioId) return <p className="muted">Carregando...</p>;
 
   return (
@@ -305,32 +469,9 @@ function GerenciarEstrutura() {
 
       <div className="card">
         <h2>Blocos e apartamentos</h2>
-        <div className="stack" style={{ marginTop: 8 }}>
-          {blocos.map((b) => (
-            <div key={b.id} className="card">
-              <strong>{b.nome}</strong>
-              <div className="stack" style={{ marginTop: 8 }}>
-                {b.apartamentos.map((ap) => (
-                  <span key={ap.id} className="muted">
-                    Apto {ap.numero}
-                  </span>
-                ))}
-                {b.apartamentos.length === 0 && <span className="muted">Nenhum apartamento ainda.</span>}
-              </div>
-              <form
-                onSubmit={(e) => handleCriarApartamento(b.id, e)}
-                className="row"
-                style={{ marginTop: 12 }}
-              >
-                <input
-                  placeholder="Número do apartamento"
-                  value={numeroApartamento[b.id] ?? ''}
-                  onChange={(e) => setNumeroApartamento((prev) => ({ ...prev, [b.id]: e.target.value }))}
-                  style={{ flex: 1 }}
-                />
-                <button type="submit">Adicionar</button>
-              </form>
-            </div>
+        <div className="areas-grid" style={{ marginTop: 12 }}>
+          {blocos.map((b, i) => (
+            <CardBloco key={b.id} bloco={b} indice={i} predioId={predioId} aoAtualizar={carregar} />
           ))}
           {blocos.length === 0 && <p className="muted">Nenhum bloco cadastrado.</p>}
         </div>

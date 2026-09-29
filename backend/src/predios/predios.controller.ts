@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ConfirmarImagemDto } from '../common/dto/confirmar-imagem.dto.js';
 import { SolicitarUploadImagemDto } from '../common/dto/solicitar-upload-imagem.dto.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
@@ -7,6 +7,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.type.js';
 import { Role } from '../generated/prisma/enums.js';
 import { AtualizarAreaSocialDto } from './dto/atualizar-area-social.dto.js';
+import { AtualizarBlocoDto } from './dto/atualizar-bloco.dto.js';
 import { CriarApartamentoDto } from './dto/criar-apartamento.dto.js';
 import { CriarAreaSocialDto } from './dto/criar-area-social.dto.js';
 import { CriarBlocoDto } from './dto/criar-bloco.dto.js';
@@ -106,5 +107,39 @@ export class PrediosController {
     @Body() dto: CriarApartamentoDto,
   ) {
     return this.prediosService.criarApartamento(user, id, blocoId, dto);
+  }
+
+  @Roles(Role.GESTOR)
+  @Delete(':id/areas-sociais/:areaId')
+  removerAreaSocial(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('areaId') areaId: string) {
+    return this.prediosService.removerAreaSocial(user, id, areaId);
+  }
+
+  @Roles(Role.GESTOR)
+  @Patch(':id/blocos/:blocoId')
+  atualizarBloco(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('blocoId') blocoId: string,
+    @Body() dto: AtualizarBlocoDto,
+  ) {
+    return this.prediosService.atualizarBloco(user, id, blocoId, dto.nome);
+  }
+
+  @Roles(Role.GESTOR)
+  @Delete(':id/blocos/:blocoId')
+  removerBloco(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('blocoId') blocoId: string) {
+    return this.prediosService.removerBloco(user, id, blocoId);
+  }
+
+  @Roles(Role.GESTOR)
+  @Delete(':id/blocos/:blocoId/apartamentos/:apartamentoId')
+  removerApartamento(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('blocoId') blocoId: string,
+    @Param('apartamentoId') apartamentoId: string,
+  ) {
+    return this.prediosService.removerApartamento(user, id, blocoId, apartamentoId);
   }
 }

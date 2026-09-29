@@ -759,6 +759,14 @@ button:disabled {
   opacity: 0.6;
 }
 
+/* Quando o formulario de edicao (ou a lista expandida, no caso dos
+   blocos) esta aberto, o card ocupa a linha inteira da grade — a
+   largura minima de uma celula normal (minmax(180px,1fr)) e estreita
+   demais pra varios campos lado a lado. */
+.area-card-expandido {
+  grid-column: 1 / -1;
+}
+
 .area-card-banner {
   height: 100px;
 }

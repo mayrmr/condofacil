@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   EXTENSAO_POR_CONTENT_TYPE,
   type SolicitarUploadImagemDto,
@@ -170,6 +170,63 @@ export class PrediosService {
       throw new NotFoundException('Bloco nao encontrado neste predio.');
     }
     return this.prisma.apartamento.create({ data: { blocoId, numero: dto.numero } });
+  }
+
+  async removerAreaSocial(user: AuthUser, predioId: string, areaId: string) {
+    const area = await this.buscarAreaSocialOuFalhar(user, predioId, areaId);
+    const reservas = await this.prisma.reserva.count({ where: { areaId: area.id } });
+    if (reservas > 0) {
+      throw new ConflictException('Nao e possivel excluir: existem reservas vinculadas a esta area.');
+    }
+    await this.prisma.areaSocial.delete({ where: { id: area.id } });
+  }
+
+  async atualizarBloco(user: AuthUser, predioId: string, blocoId: string, nome: string) {
+    const bloco = await this.buscarBlocoOuFalhar(user, predioId, blocoId);
+    return this.prisma.bloco.update({ where: { id: bloco.id }, data: { nome } });
+  }
+
+  async removerBloco(user: AuthUser, predioId: string, blocoId: string) {
+    const bloco = await this.buscarBlocoOuFalhar(user, predioId, blocoId);
+    const [apartamentos, encomendas] = await Promise.all([
+      this.prisma.apartamento.count({ where: { blocoId: bloco.id } }),
+      this.prisma.encomenda.count({ where: { blocoId: bloco.id } }),
+    ]);
+    if (apartamentos > 0) {
+      throw new ConflictException('Nao e possivel excluir: exclua os apartamentos deste bloco primeiro.');
+    }
+    if (encomendas > 0) {
+      throw new ConflictException('Nao e possivel excluir: existem encomendas vinculadas a este bloco.');
+    }
+    await this.prisma.bloco.delete({ where: { id: bloco.id } });
+  }
+
+  async removerApartamento(user: AuthUser, predioId: string, blocoId: string, apartamentoId: string) {
+    await this.buscarBlocoOuFalhar(user, predioId, blocoId);
+    const apartamento = await this.prisma.apartamento.findUnique({ where: { id: apartamentoId } });
+    if (!apartamento || apartamento.blocoId !== blocoId) {
+      throw new NotFoundException('Apartamento nao encontrado neste bloco.');
+    }
+    const [usuarios, encomendas] = await Promise.all([
+      this.prisma.usuario.count({ where: { apartamentoId } }),
+      this.prisma.encomenda.count({ where: { apartamentoId } }),
+    ]);
+    if (usuarios > 0) {
+      throw new ConflictException('Nao e possivel excluir: existem moradores vinculados a este apartamento.');
+    }
+    if (encomendas > 0) {
+      throw new ConflictException('Nao e possivel excluir: existem encomendas vinculadas a este apartamento.');
+    }
+    await this.prisma.apartamento.delete({ where: { id: apartamentoId } });
+  }
+
+  private async buscarBlocoOuFalhar(user: AuthUser, predioId: string, blocoId: string) {
+    this.verificarAcesso(user, predioId);
+    const bloco = await this.prisma.bloco.findUnique({ where: { id: blocoId } });
+    if (!bloco || bloco.predioId !== predioId) {
+      throw new NotFoundException('Bloco nao encontrado neste predio.');
+    }
+    return bloco;
   }
 
   private async buscarAreaSocialOuFalhar(user: AuthUser, predioId: string, areaId: string) {
