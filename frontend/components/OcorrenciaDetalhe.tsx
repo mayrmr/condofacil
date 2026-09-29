@@ -171,7 +171,12 @@ export function OcorrenciaDetalhe({
           <h2>Prioridade</h2>
           <div className="row" style={{ marginTop: 8 }}>
             {(['BAIXA', 'MEDIA', 'ALTA', 'URGENTE'] as Prioridade[]).map((p) => (
-              <button key={p} onClick={() => handlePrioridade(p)} disabled={ocorrencia.prioridade === p}>
+              <button
+                key={p}
+                className="prioridade-pill"
+                onClick={() => handlePrioridade(p)}
+                disabled={ocorrencia.prioridade === p}
+              >
                 {p}
               </button>
             ))}
